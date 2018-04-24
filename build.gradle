@@ -24,7 +24,7 @@ jfx {
     mainClass = 'ui.Main'
 
     // minimal requirement for jfxNative-task
-    vendor = 'YourName'
+    vendor = 'SIY1121'
 }
 
 repositories {
