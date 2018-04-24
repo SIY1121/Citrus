@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.Double?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ScrollBar?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.shape.Polygon?>
+
+<?import javafx.scene.shape.Rectangle?>
+<GridPane fx:id="timelineRootPane" stylesheets="/layout/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.TimelineController">
+    <rowConstraints>
+        <RowConstraints minHeight="10" prefHeight="10" />
+        <RowConstraints minHeight="10" prefHeight="15" />
+        <RowConstraints minHeight="20" prefHeight="20" />
+        <RowConstraints vgrow="ALWAYS" />
+    </rowConstraints>
+    <columnConstraints>
+        <ColumnConstraints maxWidth="80" minWidth="80" />
+        <ColumnConstraints hgrow="ALWAYS" />
+    </columnConstraints>
+
+    <ChoiceBox fx:id="sceneChoiceBox" maxHeight="20.0" minHeight="20.0" prefHeight="20.0" prefWidth="80.0" style="-fx-font-size:11px" GridPane.rowSpan="2" />
+
+    <ScrollBar fx:id="hScrollBar" visibleAmount="0.2" GridPane.columnIndex="1" />
+
+    <Slider fx:id="scaleSlider" max="10" min="0.1" GridPane.rowIndex="2" />
+
+    <Pane onMouseDragged="#topPaneOnMouseDragged" onMousePressed="#topPaneOnMousePressed" onMouseReleased="#topPaneOnMouseReleased" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2">
+        <clip>
+            <Rectangle fx:id="timelineAxisClipRectangle" width="100" height="35"/>
+        </clip>
+        <Canvas fx:id="timelineAxis" height="35" />
+        <Line fx:id="topCaret" endY="35" stroke="RED" />
+        <Polygon fx:id="polygonCaret" fill="DODGERBLUE" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" style="-fx-cursor: hand;">
+            <points>
+                <Double fx:value="-10.0" />
+                <Double fx:value="0" />
+                <Double fx:value="10.0" />
+                <Double fx:value="0" />
+                <Double fx:value="10.0" />
+                <Double fx:value="10.0" />
+                <Double fx:value="0.0" />
+                <Double fx:value="20.0" />
+                <Double fx:value="-10.0" />
+                <Double fx:value="10.0" />
+            </points>
+        </Polygon>
+    </Pane>
+
+    <ScrollPane fx:id="labelScrollPane" hbarPolicy="NEVER" vbarPolicy="NEVER" GridPane.rowIndex="3">
+        <VBox fx:id="labelVBox" />
+    </ScrollPane>
+
+    <ScrollPane fx:id="layerScrollPane" hbarPolicy="NEVER" GridPane.columnIndex="1" GridPane.rowIndex="3">
+        <Pane>
+
+            <VBox fx:id="layerVBox" onMouseDragged="#layerScrollPaneOnMouseDragged" onMousePressed="#layerScrollPaneOnMousePressed" onMouseReleased="#layerScrollPaneOnMouseReleased" />
+            <Line fx:id="caret" endY="100.0" stroke="RED" />
+
+        </Pane>
+
+    </ScrollPane>
+
+</GridPane>

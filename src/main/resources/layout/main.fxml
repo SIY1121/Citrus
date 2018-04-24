@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.embed.swing.SwingNode?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<Pane fx:id="rootPane" stylesheets="/layout/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.Controller">
+    <BorderPane fx:id="borderPane">
+        <top>
+            <MenuBar fx:id="menuBar">
+                <Menu text="ファイル">
+                    <MenuItem text="開く" />
+                    <MenuItem text="出力"  onAction="#onOutput"/>
+                </Menu>
+                <Menu text="編集" />
+                <Menu text="ヘルプ">
+                    <MenuItem onAction="#onCodecInfo" text="コーデック情報"/>
+                    <MenuItem onAction="#onTest" text="テスト" />
+                    <MenuItem onAction="#onVersionInfo" text="バージョン情報" />
+                </Menu>
+            </MenuBar>
+        </top>
+        <center>
+            <SplitPane dividerPositions="0.8">
+
+                <SplitPane fx:id="splitPane" dividerPositions="0.59765625" orientation="VERTICAL">
+                    <AnchorPane fx:id="canvasWrapper">
+                        <SwingNode fx:id="glCanvas" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" />
+                    </AnchorPane>
+                    <fx:include fx:id="timeline" source="timeline.fxml" />
+                </SplitPane>
+
+                <AnchorPane fx:id="rightPane" minWidth="150" />
+            </SplitPane>
+        </center>
+      <bottom>
+         
+      </bottom>
+      <bottom>
+      </bottom>
+
+    </BorderPane>
+</Pane>

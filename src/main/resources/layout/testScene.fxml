@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import ui.CustomSlider?>
+<VBox prefHeight="400.0" prefWidth="600.0" stylesheets="/layout/main.css" xmlns="http://javafx.com/javafx/8.0.121">
+    <CustomSlider prefHeight="25" prefWidth="100" name="X" />
+    <CustomSlider prefHeight="25" prefWidth="100" name="y"/>
+    <CustomSlider prefHeight="25" prefWidth="100" name="z"/>
+</VBox>

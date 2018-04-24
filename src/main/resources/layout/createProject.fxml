@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.CreateProject" stylesheets="/layout/main.cssain.css">
+    <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+          AnchorPane.topAnchor="0.0">
+        <TitledPane animated="false" collapsible="false" prefHeight="150.0" prefWidth="200.0" text="映像">
+            <VBox prefWidth="598.0" spacing="20.0">
+                <HBox spacing="10.0">
+                    <Label prefWidth="28.0" text="サイズ">
+                        <HBox.margin>
+                            <Insets right="20.0"/>
+                        </HBox.margin>
+                    </Label>
+                    <Label text="横"/>
+                    <Spinner min="1" max="3840" initialValue="1920" HBox.hgrow="ALWAYS" fx:id="widthSpinner"/>
+                    <Label text="縦"/>
+                    <Spinner min="1" max="2160" initialValue="1080" fx:id="heightSpinner"/>
+                </HBox>
+                <HBox prefHeight="100.0" prefWidth="200.0" spacing="20.0">
+                    <Label text="フレームレート"/>
+                    <Spinner min="1" initialValue="30" max="60" fx:id="fpsSpinner"/>
+                </HBox>
+            </VBox>
+        </TitledPane>
+        <TitledPane animated="false" collapsible="false" prefHeight="200.0" prefWidth="200.0" text="音声">
+            <VBox prefHeight="200.0" prefWidth="100.0" spacing="20.0">
+                <HBox prefHeight="100.0" prefWidth="200.0" spacing="20.0">
+                    <Label text="サンプルレート"/>
+                    <Spinner min="8000" max="96000" initialValue="48000" fx:id="samplerateSpinner"/>
+                </HBox>
+            </VBox>
+        </TitledPane>
+    </VBox>
+   <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="100.0" text="OK" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0" onAction="#onOkClicked" />
+</AnchorPane>

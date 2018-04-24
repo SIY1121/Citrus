@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.web.WebView?>
+
+<AnchorPane prefHeight="425.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.About">
+    <children>
+        <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <tabs>
+                <Tab text="Citrusについて">
+                    <content>
+                        <VBox minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                            <children>
+                                <ImageView fitHeight="304.0" fitWidth="500.0" pickOnBounds="true" preserveRatio="true">
+                                    <image>
+                                        <Image url="@../../kotlin/assets/cit_sp.png" />
+                                    </image>
+                                </ImageView>
+                                <Label alignment="CENTER" prefHeight="17.0" prefWidth="500.0" text="Citrus  alpha 0.2.0" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="24.0" />
+                                    </font>
+                                    <effect>
+                                        <DropShadow color="#ffd000" />
+                                    </effect>
+                                </Label>
+                                <Label alignment="CENTER" prefHeight="17.0" prefWidth="500.0" text="by SIY1121" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="20.0" />
+                                    </font>
+                                    <effect>
+                                        <DropShadow color="#ffd000" />
+                                    </effect>
+                                </Label>
+                            </children>
+                        </VBox>
+                    </content>
+                </Tab>
+                <Tab text="ライセンス GPL v3">
+                    <content>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                            <WebView fx:id="gplView" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                        </AnchorPane>
+                    </content>
+                </Tab>
+                <Tab text="オープンソース">
+                    <content>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                            <children>
+                                <WebView fx:id="openView" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                            </children>
+                        </AnchorPane>
+                    </content>
+                </Tab>
+
+            </tabs>
+        </TabPane>
+      <Button  onAction="#onClicked" mnemonicParsing="false" text="OK" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="200.0" AnchorPane.rightAnchor="200.0" />
+    </children>
+</AnchorPane>

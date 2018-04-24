@@ -1,0 +1,67 @@
+buildscript {
+    ext.kotlin_version = '1.2.40'
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'de.dynamicfiles.projects.gradle.plugins', name: 'javafx-gradle-plugin', version: '8.8.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+group 'space.siy'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'kotlin'
+apply plugin: 'javafx-gradle-plugin'
+
+sourceCompatibility = 1.8
+
+jfx {
+    // minimal requirement for jfxJar-task
+    mainClass = 'ui.Main'
+
+    // minimal requirement for jfxNative-task
+    vendor = 'YourName'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.22.5'
+    compile group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: '1.2.40'
+
+    compile group: 'org.bytedeco', name: 'javacv-platform', version: '1.4.1'
+    compile "org.jogamp.gluegen:gluegen-rt:2.3.2"
+    compile "org.jogamp.jogl:jogl-all:2.3.2"
+
+    runtime "org.jogamp.gluegen:gluegen-rt:2.3.1:natives-linux-amd64"
+    runtime "org.jogamp.gluegen:gluegen-rt:2.3.1:natives-linux-armv6"
+    runtime "org.jogamp.gluegen:gluegen-rt:2.3.1:natives-linux-armv6hf"
+    runtime "org.jogamp.gluegen:gluegen-rt:2.3.1:natives-linux-i586"
+    runtime "org.jogamp.gluegen:gluegen-rt:2.3.1:natives-macosx-universal"
+    runtime "org.jogamp.gluegen:gluegen-rt:2.3.1:natives-windows-amd64"
+    runtime "org.jogamp.gluegen:gluegen-rt:2.3.1:natives-windows-i586"
+
+    runtime "org.jogamp.jogl:jogl-all:2.3.1:natives-linux-amd64"
+    runtime "org.jogamp.jogl:jogl-all:2.3.1:natives-linux-armv6"
+    runtime "org.jogamp.jogl:jogl-all:2.3.1:natives-linux-armv6hf"
+    runtime "org.jogamp.jogl:jogl-all:2.3.1:natives-linux-i586"
+    runtime "org.jogamp.jogl:jogl-all:2.3.1:natives-macosx-universal"
+    runtime "org.jogamp.jogl:jogl-all:2.3.1:natives-windows-amd64"
+    runtime "org.jogamp.jogl:jogl-all:2.3.1:natives-windows-i586"
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}

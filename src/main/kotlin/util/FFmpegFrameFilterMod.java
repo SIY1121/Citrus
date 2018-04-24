@@ -1,0 +1,553 @@
+package util;
+
+/*
+ * Copyright (C) 2015-2018 Samuel Audet
+ *
+ * Licensed either under the Apache License, Version 2.0, or (at your option)
+ * under the terms of the GNU General Public License as published by
+ * the Free Software Foundation (subject to the "Classpath" exception),
+ * either version 2, or any later version (collectively, the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.gnu.org/licenses/
+ *     http://www.gnu.org/software/classpath/license.html
+ *
+ * or as provided in the LICENSE.txt file that accompanied this code.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ *
+ * Based on the filtering_video.c file included in FFmpeg 2.7.1
+ * which is covered by the following copyright notice:
+ *
+ * Copyright (c) 2010 Nicolas George
+ * Copyright (c) 2011 Stefano Sabatini
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
+import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.javacpp.DoublePointer;
+import org.bytedeco.javacpp.FloatPointer;
+import org.bytedeco.javacpp.IntPointer;
+import org.bytedeco.javacpp.Loader;
+import org.bytedeco.javacpp.Pointer;
+import org.bytedeco.javacpp.PointerPointer;
+import org.bytedeco.javacpp.ShortPointer;
+import org.bytedeco.javacv.FFmpegFrameRecorder;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameFilter;
+
+import static org.bytedeco.javacpp.avcodec.*;
+import static org.bytedeco.javacpp.avfilter.*;
+import static org.bytedeco.javacpp.avformat.*;
+import static org.bytedeco.javacpp.avutil.*;
+
+/**
+ * A {@link FrameFilter} that uses FFmpeg to filter frames. We can refer to
+ * <a href="https://ffmpeg.org/ffmpeg-filters.html">FFmpeg Filters Documentation</a>
+ * to get a list of filters and the options we can use. The input image width and
+ * height must be specified on the constructor, while other optional values may be
+ * set via corresponding properties.
+ *
+ * @author Samuel Audet
+ */
+public class FFmpegFrameFilterMod extends FrameFilter {
+
+    private static Exception loadingException = null;
+    public static void tryLoad() throws Exception {
+        if (loadingException != null) {
+            throw loadingException;
+        } else {
+            try {
+                Loader.load(org.bytedeco.javacpp.avutil.class);
+                Loader.load(org.bytedeco.javacpp.avcodec.class);
+                Loader.load(org.bytedeco.javacpp.avformat.class);
+                Loader.load(org.bytedeco.javacpp.postproc.class);
+                Loader.load(org.bytedeco.javacpp.swresample.class);
+                Loader.load(org.bytedeco.javacpp.swscale.class);
+                Loader.load(org.bytedeco.javacpp.avfilter.class);
+
+                av_register_all();
+                avfilter_register_all();
+            } catch (Throwable t) {
+                if (t instanceof Exception) {
+                    throw loadingException = (Exception)t;
+                } else {
+                    throw loadingException = new Exception("Failed to load " + FFmpegFrameRecorder.class, t);
+                }
+            }
+        }
+    }
+
+    static {
+        try {
+            tryLoad();
+        } catch (Exception ex) { }
+    }
+
+    public FFmpegFrameFilterMod(String videoFilters, String audioFilters, int imageWidth, int imageHeight, int audioChannels) {
+        this.filters = videoFilters;
+        this.imageWidth = imageWidth;
+        this.imageHeight = imageHeight;
+        this.pixelFormat = AV_PIX_FMT_BGR24;
+        this.frameRate = 30;
+        this.aspectRatio = 0;
+    }
+
+    public FFmpegFrameFilterMod(String filters, int imageWidth, int imageHeight) {
+        this(filters, null, imageWidth, imageHeight, 0);
+    }
+
+    public FFmpegFrameFilterMod(String afilters, int audioChannels) {
+        this(null, afilters, 0, 0, audioChannels);
+    }
+
+    @Override public void release() throws Exception {
+        synchronized (org.bytedeco.javacpp.avfilter.class) {
+            releaseUnsafe();
+        }
+    }
+    void releaseUnsafe() throws Exception {
+        if (filter_graph != null) {
+            avfilter_graph_free(filter_graph);
+            buffersink_ctx = null;
+            buffersrc_ctx = null;
+            setpts_ctx = null;
+            filter_graph = null;
+        }
+        if (afilter_graph != null) {
+            avfilter_graph_free(afilter_graph);
+            abuffersink_ctx = null;
+            abuffersrc_ctx = null;
+            afilter_graph = null;
+        }
+        if (image_frame != null) {
+            av_frame_free(image_frame);
+            image_frame = null;
+        }
+        if (samples_frame != null) {
+            av_frame_free(samples_frame);
+            samples_frame = null;
+        }
+        if (filt_frame != null) {
+            av_frame_free(filt_frame);
+            filt_frame = null;
+        }
+        frame = null;
+    }
+    @Override protected void finalize() throws Throwable {
+        super.finalize();
+        release();
+    }
+
+    AVFilterContext buffersink_ctx;
+    AVFilterContext buffersrc_ctx;
+    AVFilterContext setpts_ctx;
+    AVFilterGraph filter_graph;
+
+    AVFilterContext abuffersink_ctx;
+    AVFilterContext abuffersrc_ctx;
+    AVFilterGraph afilter_graph;
+
+    AVFrame image_frame;
+    AVFrame samples_frame;
+    AVFrame filt_frame;
+
+    BytePointer[] image_ptr;
+    BytePointer[] samples_ptr;
+    Buffer[] image_buf;
+    Buffer[] samples_buf;
+    Frame frame, inframe;
+
+    @Override public int getImageWidth() {
+        return buffersink_ctx != null ? av_buffersink_get_w(buffersink_ctx) : super.getImageWidth();
+    }
+
+    @Override public int getImageHeight() {
+        return buffersink_ctx != null ? av_buffersink_get_h(buffersink_ctx) : super.getImageHeight();
+    }
+
+    @Override public int getPixelFormat() {
+        return buffersink_ctx != null ? av_buffersink_get_format(buffersink_ctx) : super.getPixelFormat();
+    }
+
+    @Override public double getFrameRate() {
+        if (buffersink_ctx != null) {
+            AVRational r = av_buffersink_get_frame_rate(buffersink_ctx);
+            if (r.num() == 0 && r.den() == 0) {
+                r = av_buffersink_get_time_base(buffersink_ctx);
+                return (double)r.den() / r.num();
+            }
+            return (double)r.num() / r.den();
+        } else {
+            return super.getFrameRate();
+        }
+    }
+
+    @Override public double getAspectRatio() {
+        if (buffersink_ctx != null) {
+            AVRational r = av_buffersink_get_sample_aspect_ratio(buffersink_ctx);
+            double a = (double)r.num() / r.den();
+            return a == 0.0 ? 1.0 : a;
+        } else {
+            return super.getAspectRatio();
+        }
+    }
+
+    @Override public void start() throws Exception {
+        synchronized (org.bytedeco.javacpp.avfilter.class) {
+            image_frame = av_frame_alloc();
+            samples_frame = av_frame_alloc();
+            filt_frame = av_frame_alloc();
+            image_ptr = new BytePointer[] { null };
+            image_buf = new Buffer[] { null };
+            samples_ptr = new BytePointer[] { null };
+            samples_buf = new Buffer[] { null };
+            frame = new Frame();
+
+            if (image_frame == null || samples_frame == null || filt_frame == null) {
+                throw new Exception("Could not allocate frames");
+            }
+            if (filters != null && imageWidth > 0 && imageHeight > 0) {
+                startVideoUnsafe();
+            }
+        }
+    }
+
+    void startVideoUnsafe() throws Exception {
+        int ret;
+        AVFilter buffersrc  = avfilter_get_by_name("buffer");
+        AVFilter buffersink = avfilter_get_by_name("buffersink");
+        AVFilter setpts = avfilter_get_by_name("setpts");
+        AVFilterInOut outputs = avfilter_inout_alloc();
+        AVFilterInOut inputs  = avfilter_inout_alloc();
+        AVRational time_base = av_inv_q(av_d2q(frameRate, 1001000));
+        int pix_fmts[] = { pixelFormat, AV_PIX_FMT_NONE };
+
+        try {
+            filter_graph = avfilter_graph_alloc();
+            if (outputs == null || inputs == null || filter_graph == null) {
+                throw new Exception("Could not allocate video filter graph: Out of memory?");
+            }
+
+            /* buffer video source: the decoded frames from the decoder will be inserted here. */
+            AVRational r = av_d2q(aspectRatio > 0 ? aspectRatio : 1, 255);
+            String args = String.format(
+                    "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+                    imageWidth, imageHeight, pixelFormat, time_base.num(), time_base.den(), r.num(), r.den());
+            ret = avfilter_graph_create_filter(buffersrc_ctx = new AVFilterContext(), buffersrc, "in",
+                    args, null, filter_graph);
+            if (ret < 0) {
+                throw new Exception("avfilter_graph_create_filter() error " + ret + ": Cannot create video buffer source.");
+            }
+
+            ret = avfilter_graph_create_filter(setpts_ctx = new AVFilterContext(), setpts, "setpts",
+                    "N", null, filter_graph);
+            if (ret < 0) {
+                throw new Exception("avfilter_graph_create_filter() error " + ret + ": Cannot create setpts filter.");
+            }
+
+            ret = avfilter_link(buffersrc_ctx, 0, setpts_ctx, 0);
+            if (ret < 0) {
+                throw new Exception("avfilter_graph_create_filter() error " + ret + ": Cannot link setpts filter.");
+            }
+
+            /* buffer video sink: to terminate the filter chain. */
+            ret = avfilter_graph_create_filter(buffersink_ctx = new AVFilterContext(), buffersink, "out",
+                    null, null, filter_graph);
+            if (ret < 0) {
+                throw new Exception("avfilter_graph_create_filter() error " + ret + ": Cannot create video buffer sink.");
+            }
+//            ret = av_opt_set_bin(buffersink_ctx, "pix_fmts", new BytePointer(new IntPointer(pix_fmts)), 4, AV_OPT_SEARCH_CHILDREN);
+//            if (ret < 0) {
+//                throw new Exception("av_opt_set_bin() error " + ret + ": Cannot set output pixel format.");
+//            }
+
+            /*
+             * Set the endpoints for the filter graph. The filter_graph will
+             * be linked to the graph described by filters_descr.
+             */
+
+            /*
+             * The buffer source output must be connected to the input pad of
+             * the first filter described by filters_descr; since the first
+             * filter input label is not specified, it is set to "in" by
+             * default.
+             */
+            outputs.name(av_strdup(new BytePointer("in")));
+            outputs.filter_ctx(setpts_ctx);
+            outputs.pad_idx(0);
+            outputs.next(null);
+
+            /*
+             * The buffer sink input must be connected to the output pad of
+             * the last filter described by filters_descr; since the last
+             * filter output label is not specified, it is set to "out" by
+             * default.
+             */
+            inputs.name(av_strdup(new BytePointer("out")));
+            inputs.filter_ctx(buffersink_ctx);
+            inputs.pad_idx(0);
+            inputs.next(null);
+            if ((ret = avfilter_graph_parse_ptr(filter_graph, filters,
+                    inputs, outputs, null)) < 0) {
+                throw new Exception("avfilter_graph_parse_ptr() error " + ret);
+            }
+            if ((ret = avfilter_graph_config(filter_graph, null)) < 0) {
+                throw new Exception("avfilter_graph_config() error " + ret);
+            }
+        } finally {
+            avfilter_inout_free(inputs);
+            avfilter_inout_free(outputs);
+        }
+    }
+
+    @Override
+    public void stop() throws Exception {
+        release();
+    }
+
+    @Override public void push(Frame frame) throws Exception {
+        push(frame, AV_PIX_FMT_NONE);
+    }
+    public void push(Frame frame, int pixelFormat) throws Exception {
+        inframe = frame;
+        if (frame != null && frame.image != null && buffersrc_ctx != null) {
+            pushImage(frame.imageWidth, frame.imageHeight, frame.imageDepth,
+                    frame.imageChannels, frame.imageStride, pixelFormat, frame.image);
+        }
+    }
+
+    public void pushImage(int width, int height, int depth, int channels, int stride, int pixelFormat, Buffer ... image) throws Exception {
+        int ret;
+        int step = stride * Math.abs(depth) / 8;
+        BytePointer data = image[0] instanceof ByteBuffer
+                ? new BytePointer((ByteBuffer)image[0].position(0))
+                : new BytePointer(new Pointer(image[0].position(0)));
+
+        if (pixelFormat == AV_PIX_FMT_NONE) {
+            if ((depth == Frame.DEPTH_UBYTE || depth == Frame.DEPTH_BYTE) && channels == 3) {
+                pixelFormat = AV_PIX_FMT_BGR24;
+            } else if ((depth == Frame.DEPTH_UBYTE || depth == Frame.DEPTH_BYTE) && channels == 1) {
+                pixelFormat = AV_PIX_FMT_GRAY8;
+            } else if ((depth == Frame.DEPTH_USHORT || depth == Frame.DEPTH_SHORT) && channels == 1) {
+                pixelFormat = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ?
+                        AV_PIX_FMT_GRAY16BE : AV_PIX_FMT_GRAY16LE;
+            } else if ((depth == Frame.DEPTH_UBYTE || depth == Frame.DEPTH_BYTE) && channels == 4) {
+                pixelFormat = AV_PIX_FMT_RGBA;
+            } else if ((depth == Frame.DEPTH_UBYTE || depth == Frame.DEPTH_BYTE) && channels == 2) {
+                pixelFormat = AV_PIX_FMT_NV21; // Android's camera capture format
+            } else {
+                throw new Exception("Could not guess pixel format of image: depth=" + depth + ", channels=" + channels);
+            }
+        }
+
+        if (pixelFormat == AV_PIX_FMT_NV21) {
+            step = width;
+        }
+
+        av_image_fill_arrays(new PointerPointer(image_frame), image_frame.linesize(), data, pixelFormat, width, height, 1);
+        image_frame.linesize(0, step);
+        image_frame.format(pixelFormat);
+        image_frame.width(width);
+        image_frame.height(height);
+
+        /* push the decoded frame into the filtergraph */
+        if ((ret = av_buffersrc_add_frame_flags(buffersrc_ctx, image_frame, AV_BUFFERSRC_FLAG_KEEP_REF)) < 0) {
+            throw new Exception("av_buffersrc_add_frame_flags() error " + ret + ": Error while feeding the filtergraph.");
+        }
+    }
+
+    public void pushSamples(int audioChannels, int sampleRate, int sampleFormat, Buffer ... samples) throws Exception {
+        int ret;
+        Pointer[] data = new Pointer[samples.length];
+        int sampleSize = samples != null ? ((samples[0].limit() - samples[0].position()) / (samples.length > 1 ? 1 : audioChannels)) : 0;
+        if (samples != null && samples[0] instanceof ByteBuffer) {
+            sampleFormat = data.length > 1 ? AV_SAMPLE_FMT_U8P : AV_SAMPLE_FMT_U8;
+            for (int i = 0; i < data.length; i++) {
+                data[i] = new BytePointer((ByteBuffer)samples[i]);
+            }
+        } else if (samples != null && samples[0] instanceof ShortBuffer) {
+            sampleFormat = data.length > 1 ? AV_SAMPLE_FMT_S16P : AV_SAMPLE_FMT_S16;
+            for (int i = 0; i < data.length; i++) {
+                data[i] = new ShortPointer((ShortBuffer)samples[i]);
+            }
+        } else if (samples != null && samples[0] instanceof IntBuffer) {
+            sampleFormat = data.length > 1 ? AV_SAMPLE_FMT_S32P : AV_SAMPLE_FMT_S32;
+            for (int i = 0; i < data.length; i++) {
+                data[i] = new IntPointer((IntBuffer)samples[i]);
+            }
+        } else if (samples != null && samples[0] instanceof FloatBuffer) {
+            sampleFormat = data.length > 1 ? AV_SAMPLE_FMT_FLTP : AV_SAMPLE_FMT_FLT;
+            for (int i = 0; i < data.length; i++) {
+                data[i] = new FloatPointer((FloatBuffer)samples[i]);
+            }
+        } else if (samples != null && samples[0] instanceof DoubleBuffer) {
+            sampleFormat = data.length > 1 ? AV_SAMPLE_FMT_DBLP : AV_SAMPLE_FMT_DBL;
+            for (int i = 0; i < data.length; i++) {
+                data[i] = new DoublePointer((DoubleBuffer)samples[i]);
+            }
+        } else if (samples != null) {
+            for (int i = 0; i < data.length; i++) {
+                data[i] = new Pointer(samples[i]);
+            }
+        }
+
+        av_samples_fill_arrays(new PointerPointer(samples_frame), samples_frame.linesize(), new BytePointer(data[0]), audioChannels, sampleSize, sampleFormat, 1);
+        for (int i = 0; i < samples.length; i++) {
+            samples_frame.data(i, new BytePointer(data[i]));
+        }
+        samples_frame.channels(audioChannels);
+        samples_frame.channel_layout(av_get_default_channel_layout(audioChannels));
+        samples_frame.nb_samples(sampleSize);
+        samples_frame.format(sampleFormat);
+        samples_frame.sample_rate(sampleRate);
+
+        /* push the decoded frame into the filtergraph */
+        if ((ret = av_buffersrc_add_frame_flags(abuffersrc_ctx, samples_frame, AV_BUFFERSRC_FLAG_KEEP_REF)) < 0) {
+            throw new Exception("av_buffersrc_add_frame_flags() error " + ret + ": Error while feeding the filtergraph.");
+        }
+    }
+
+    @Override public Frame pull() throws Exception {
+        frame.keyFrame = false;
+        frame.imageWidth = 0;
+        frame.imageHeight = 0;
+        frame.imageDepth = 0;
+        frame.imageChannels = 0;
+        frame.imageStride = 0;
+        frame.image = null;
+        frame.sampleRate = 0;
+        frame.audioChannels = 0;
+        frame.samples = null;
+        frame.opaque = null;
+
+        Frame f = null;
+        if (f == null && buffersrc_ctx != null) {
+            f = pullImage();
+        }
+        if (f == null && abuffersrc_ctx != null) {
+            f = pullSamples();
+        }
+        if (f == null && buffersrc_ctx == null && abuffersrc_ctx == null) {
+            f = inframe;
+        }
+        return f;
+    }
+
+    public Frame pullImage() throws Exception {
+        av_frame_unref(filt_frame);
+
+        /* pull a filtered frame from the filtergraph */
+        int ret = av_buffersink_get_frame(buffersink_ctx, filt_frame);
+        if (ret == -11 /*AVERROR(EAGAIN)*/ || ret == AVERROR_EOF) {
+            return null;
+        } else if (ret < 0) {
+            throw new Exception("av_buffersink_get_frame(): Error occurred: "
+                    + av_make_error_string(new BytePointer(256), 256, ret).getString());
+        }
+        frame.imageWidth  = filt_frame.width();
+        frame.imageHeight = filt_frame.height();
+        frame.imageDepth = Frame.DEPTH_UBYTE;
+        if (filt_frame.data(1) == null) {
+            frame.imageStride = filt_frame.linesize(0);
+            BytePointer ptr = filt_frame.data(0);
+            if (ptr != null && !ptr.equals(image_ptr[0])) {
+                image_ptr[0] = ptr.capacity(frame.imageHeight * Math.abs(frame.imageStride));
+                image_buf[0] = ptr.asBuffer();
+            }
+            frame.image = image_buf;
+            frame.image[0].position(0).limit(frame.imageHeight * Math.abs(frame.imageStride));
+            frame.imageChannels = Math.abs(frame.imageStride) / frame.imageWidth;
+        } else {
+            frame.imageStride = frame.imageWidth;
+            int size = av_image_get_buffer_size(filt_frame.format(), frame.imageWidth, frame.imageHeight, 1);
+            // Fix bug on Android4.0，check out https://github.com/bytedeco/javacpp/issues/39
+            if (image_buf[0] == null || image_buf[0].capacity() < size) {
+                image_buf[0] = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
+            }
+            frame.image = image_buf;
+            frame.image[0].position(0).limit(size);
+            frame.imageChannels = (size + frame.imageWidth * frame.imageHeight - 1) / (frame.imageWidth * frame.imageHeight);
+            ret = av_image_copy_to_buffer(new BytePointer((ByteBuffer) frame.image[0].position(0)), frame.image[0].capacity(),
+                    new PointerPointer(filt_frame), filt_frame.linesize(), filt_frame.format(), frame.imageWidth, frame.imageHeight, 1);
+        }
+        return frame;
+    }
+
+    public Frame pullSamples() throws Exception {
+        av_frame_unref(filt_frame);
+
+        /* pull a filtered frame from the filtergraph */
+        int ret = av_buffersink_get_frame(abuffersink_ctx, filt_frame);
+        if (ret == -11 /*AVERROR(EAGAIN)*/ || ret == AVERROR_EOF) {
+            return null;
+        } else if (ret < 0) {
+            throw new Exception("av_buffersink_get_frame(): Error occurred: "
+                    + av_make_error_string(new BytePointer(256), 256, ret).getString());
+        }
+        int sample_format = filt_frame.format();
+        int planes = av_sample_fmt_is_planar(sample_format) != 0 ? (int)filt_frame.channels() : 1;
+        int data_size = av_samples_get_buffer_size((IntPointer)null, filt_frame.channels(),
+                filt_frame.nb_samples(), filt_frame.format(), 1) / planes;
+        if (samples_buf == null || samples_buf.length != planes) {
+            samples_ptr = new BytePointer[planes];
+            samples_buf = new Buffer[planes];
+        }
+        frame.audioChannels = filt_frame.channels();
+        frame.sampleRate = filt_frame.sample_rate();
+        frame.samples = samples_buf;
+        int sample_size = data_size / av_get_bytes_per_sample(sample_format);
+        for (int i = 0; i < planes; i++) {
+            BytePointer p = filt_frame.data(i);
+            if (!p.equals(samples_ptr[i]) || samples_ptr[i].capacity() < data_size) {
+                samples_ptr[i] = p.capacity(data_size);
+                ByteBuffer b   = p.asBuffer();
+                switch (sample_format) {
+                    case AV_SAMPLE_FMT_U8:
+                    case AV_SAMPLE_FMT_U8P:  samples_buf[i] = b; break;
+                    case AV_SAMPLE_FMT_S16:
+                    case AV_SAMPLE_FMT_S16P: samples_buf[i] = b.asShortBuffer();  break;
+                    case AV_SAMPLE_FMT_S32:
+                    case AV_SAMPLE_FMT_S32P: samples_buf[i] = b.asIntBuffer();    break;
+                    case AV_SAMPLE_FMT_FLT:
+                    case AV_SAMPLE_FMT_FLTP: samples_buf[i] = b.asFloatBuffer();  break;
+                    case AV_SAMPLE_FMT_DBL:
+                    case AV_SAMPLE_FMT_DBLP: samples_buf[i] = b.asDoubleBuffer(); break;
+                    default: assert false;
+                }
+            }
+            samples_buf[i].position(0).limit(sample_size);
+        }
+        return frame;
+    }
+}
