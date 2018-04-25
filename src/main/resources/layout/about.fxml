@@ -22,7 +22,7 @@
                             <children>
                                 <ImageView fitHeight="304.0" fitWidth="500.0" pickOnBounds="true" preserveRatio="true">
                                     <image>
-                                        <Image url="@../../kotlin/assets/cit_sp.png" />
+                                        <Image url="@../img/cit_sp.png" />
                                     </image>
                                 </ImageView>
                                 <Label alignment="CENTER" prefHeight="17.0" prefWidth="500.0" text="Citrus  alpha 0.2.0" textAlignment="CENTER">
@@ -64,6 +64,6 @@
 
             </tabs>
         </TabPane>
-      <Button  onAction="#onClicked" mnemonicParsing="false" text="OK" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="200.0" AnchorPane.rightAnchor="200.0" />
+      <Button mnemonicParsing="false" onAction="#onClicked" text="OK" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="200.0" AnchorPane.rightAnchor="200.0" />
     </children>
 </AnchorPane>

@@ -76,7 +76,7 @@ class Controller : Initializable {
 
     fun onVersionInfo(actionEvent: ActionEvent) {
         val stage = Stage()
-        stage.scene  = Scene(FXMLLoader.load<Parent>(javaClass.getResource("../../resources/layout/about.fxml")))
+        stage.scene  = Scene(FXMLLoader.load<Parent>(ClassLoader.getSystemResource("layout/about.fxml")))
         stage.isResizable = false
         stage.title = "Citrusについて"
         stage.initOwner(rootPane.scene.window)
