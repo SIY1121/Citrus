@@ -29,11 +29,11 @@ abstract class DrawableObject : CitrusObject(), Drawable {
     @CProperty("回転", 5)
     val rotate = CAnimatableDoubleProperty()
 
-    override fun draw(gl: GL2,mode: Drawable.DrawMode) {
-        onDraw(gl,mode)
+    override fun draw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
+        onDraw(gl, mode, frame)
     }
 
-    open fun onDraw(gl: GL2, mode: Drawable.DrawMode) {
+    open fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
         gl.glTranslated(x.value.toDouble(), y.value.toDouble(), z.value.toDouble())
         gl.glRotated(rotate.value.toDouble(), 0.0, 0.0, 1.0)
         gl.glScaled(scale.value.toDouble(), scale.value.toDouble(), scale.value.toDouble())
@@ -44,9 +44,9 @@ abstract class DrawableObject : CitrusObject(), Drawable {
         gl.glBindTexture(GL2.GL_TEXTURE_2D, 0)
     }
 
-    override fun onFrame() {
+    override fun onFrame(frame: Int) {
         GlCanvas.gl2.glPushMatrix()
-        onDraw(GlCanvas.gl2, Drawable.DrawMode.Preview)
+        draw(GlCanvas.gl2, Drawable.DrawMode.Preview, frame)
         GlCanvas.gl2.glPopMatrix()
     }
 }

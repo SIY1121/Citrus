@@ -140,7 +140,7 @@ class Audio : CitrusObject(),AudioSampleProvider {
         hBox.translateX = -(1 - hBox.scaleX) * hBox.width / 2.0
     }
 
-    override fun onFrame() {
+    override fun onFrame(frame : Int) {
         //ファイルの読み込みが完了していた場合
         if (isGrabberStarted) {
             if (oldFrame != frame) {

@@ -120,8 +120,8 @@ class Text : DrawableObject() {
         displayName = "[テキスト] ${text.value.replace("\n", " ")}"
     }
 
-    override fun onDraw(gl: GL2, mode: Drawable.DrawMode) {
-        super.onDraw(gl, mode)
+    override fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
+        super.onDraw(gl, mode, frame)
 
 
 

@@ -129,8 +129,8 @@ class Video : DrawableObject() {
         uiObject?.onScaleChanged()
     }
 
-    override fun onDraw(gl: GL2, mode: Drawable.DrawMode) {
-        super.onDraw(gl, mode)
+    override fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
+        super.onDraw(gl, mode, frame)
 
         if (isGrabberStarted) {
             gl.glBindTexture(GL.GL_TEXTURE_2D, textureID)

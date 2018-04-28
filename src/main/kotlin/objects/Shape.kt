@@ -21,7 +21,7 @@ class Shape : DrawableObject() {
     @CProperty("種類", 0)
     val selectableProperty = CSelectableProperty(listOf("円", "四角形", "三角形", "背景"))
 
-    @CProperty("色",1)
+    @CProperty("色", 1)
     val color = CColorProperty(Color.WHITE)
 
     @CProperty("サイズ", 2)
@@ -30,15 +30,15 @@ class Shape : DrawableObject() {
 
     init {
         displayName = "[図形]"
-        selectableProperty.valueProperty.addListener{_,_,n->
+        selectableProperty.valueProperty.addListener { _, _, n ->
             displayName = "[図形] ${n.toInt().toType()}"
         }
     }
 
-    override fun onDraw(gl: GL2, mode: Drawable.DrawMode) {
-        super.onDraw(gl, mode)
-        
-        gl.glColor4d(color.value.red,color.value.green,color.value.blue,color.value.opacity)
+    override fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
+        super.onDraw(gl, mode, frame)
+
+        gl.glColor4d(color.value.red, color.value.green, color.value.blue, color.value.opacity)
         when (selectableProperty.value.toInt().toType()) {
             Type.Triangle -> {
                 gl.glEnable(GL2.GL_POLYGON_SMOOTH)
@@ -75,7 +75,7 @@ class Shape : DrawableObject() {
                 gl.glEnd()
             }
         }
-        gl.glColor4d(1.0,1.0,1.0,1.0)
+        gl.glColor4d(1.0, 1.0, 1.0, 1.0)
     }
 
     fun Int.toType(): Type {

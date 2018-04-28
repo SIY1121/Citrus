@@ -22,9 +22,6 @@ abstract class CitrusObject {
             displayNameChangeListener?.onDisplayNameChanged(value)
         }
 
-    var frame: Int = 0
-        private set
-
     val effects: MutableList<Effect> = ArrayList()
 
     val linkedObjects: MutableList<CitrusObject> = ArrayList()
@@ -56,15 +53,15 @@ abstract class CitrusObject {
     }
 
     fun onSuperFrame(frameInVideo: Int) {
-        frame = frameInVideo - start
+        val frame = frameInVideo - start
         pList.forEach {
             val v = it.get(this)
             if(v is CitrusAnimatableProperty<*>)v.frame = frame
         }
-        onFrame()
+        onFrame(frame)
     }
 
-    protected abstract fun onFrame()
+    protected abstract fun onFrame(frame : Int)
 
     fun isActive(frame: Int) = (frame in start..(end - 1))
 
