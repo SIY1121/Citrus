@@ -32,7 +32,7 @@ import javax.sound.sampled.SourceDataLine
 
 @CObject("音声", "388E3CFF", "img/ic_music.png")
 @CDroppable(["ac3", "aac", "adts", "aif", "aiff", "afc", "aifc", "amr", "au", "bit", "caf", "dts", "eac3", "flac", "g722", "tco", "rco", "gsm", "lbc", "latm", "loas", "mka", "mp2", "m2a", "mpa", "mp3", "oga", "oma", "opus", "spx", "tta", "voc", "wav", "wv"])
-class Audio : CitrusObject() {
+class Audio : CitrusObject(),AudioSampleProvider {
 
     @CProperty("ファイル", 0)
     val file = CFileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
@@ -166,6 +166,10 @@ class Audio : CitrusObject() {
             }
             oldFrame = frame
         }
+    }
+
+    override fun getSamples(frame: Int): ShortArray {
+        return ShortArray(1)
     }
 
     //ShortArrayをリトルエンディアンでbyte配列に変換
