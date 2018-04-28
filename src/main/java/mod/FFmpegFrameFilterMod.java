@@ -1,4 +1,4 @@
-package util;
+package mod;
 
 /*
  * Copyright (C) 2015-2018 Samuel Audet
@@ -479,7 +479,7 @@ public class FFmpegFrameFilterMod extends FrameFilter {
         frame.imageHeight = filt_frame.height();
         frame.imageDepth = Frame.DEPTH_UBYTE;
         if (filt_frame.data(1) == null) {
-            frame.imageStride = filt_frame.linesize(0);
+            frame.imageStride = Math.abs(filt_frame.linesize(0));
             BytePointer ptr = filt_frame.data(0);
             if (ptr != null && !ptr.equals(image_ptr[0])) {
                 image_ptr[0] = ptr.capacity(frame.imageHeight * Math.abs(frame.imageStride));

@@ -1,4 +1,4 @@
-package util;
+package mod;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -45,9 +45,6 @@ import org.bytedeco.javacpp.swscale.SwsFilter;
 import org.bytedeco.javacv.FFmpegLockCallback;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
-import org.bytedeco.javacv.FrameGrabber.Exception;
-import org.bytedeco.javacv.FrameGrabber.ImageMode;
-import org.bytedeco.javacv.FrameGrabber.SampleMode;
 
 public class FFmpegFrameGrabberMod extends FrameGrabber {
     private static Exception loadingException = null;
