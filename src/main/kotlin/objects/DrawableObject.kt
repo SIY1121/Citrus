@@ -11,14 +11,7 @@ import ui.GlCanvas
  * 座標、拡大率、透明度などをもつ
  */
 @CObject("描画")
-abstract class DrawableObject : CitrusObject() {
-    /**
-     * 描画モード
-     */
-    enum class DrawMode {
-        Preview, Final
-    }
-
+abstract class DrawableObject : CitrusObject(), Drawable {
     var selected: Boolean = false
     var enabledSelectedOutline: Boolean = true
 
@@ -32,25 +25,28 @@ abstract class DrawableObject : CitrusObject() {
     @CProperty("拡大率", 3)
     val scale = CAnimatableDoubleProperty(0.0, 10.0, tick = 0.05, def = 1.0)
     @CProperty("透明度", 4)
-    val alpha = CAnimatableDoubleProperty(0.0, 1.0,1.0,0.01)
+    val alpha = CAnimatableDoubleProperty(0.0, 1.0, 1.0, 0.01)
     @CProperty("回転", 5)
     val rotate = CAnimatableDoubleProperty()
 
+    override fun draw(gl: GL2,mode: Drawable.DrawMode) {
+        onDraw(gl,mode)
+    }
 
-    open fun onDraw(gl: GL2, mode: DrawMode) {
+    open fun onDraw(gl: GL2, mode: Drawable.DrawMode) {
         gl.glTranslated(x.value.toDouble(), y.value.toDouble(), z.value.toDouble())
         gl.glRotated(rotate.value.toDouble(), 0.0, 0.0, 1.0)
         gl.glScaled(scale.value.toDouble(), scale.value.toDouble(), scale.value.toDouble())
-        gl.glColor4d(1.0,1.0,1.0,alpha.value.toDouble())
-        if (mode == DrawMode.Preview && enabledSelectedOutline && selected) {
+        gl.glColor4d(1.0, 1.0, 1.0, alpha.value.toDouble())
+        if (mode == Drawable.DrawMode.Preview && enabledSelectedOutline && selected) {
 
         }
-        gl.glBindTexture(GL2.GL_TEXTURE_2D,0)
+        gl.glBindTexture(GL2.GL_TEXTURE_2D, 0)
     }
 
     override fun onFrame() {
         GlCanvas.gl2.glPushMatrix()
-        onDraw(GlCanvas.gl2, DrawMode.Preview)
+        onDraw(GlCanvas.gl2, Drawable.DrawMode.Preview)
         GlCanvas.gl2.glPopMatrix()
     }
 }

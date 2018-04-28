@@ -1,5 +1,6 @@
 package util
 
+import com.jogamp.opengl.GL2
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
 import org.bytedeco.javacv.FFmpegFrameRecorder
@@ -20,9 +21,6 @@ class VideoRenderer {
             recorder.frameRate = Statics.project.fps.toDouble()
             time = System.currentTimeMillis()
             recorder.start()
-            GlCanvas.instance.animator.stop()
-            GlCanvas.instance.currentFrame = 0
-            GlCanvas.instance.rendering = true
             //TODO テクスチャ反転問題をプレビュー時に反転して、出力時は普通に出すべきか
             //filter = FFmpegFrameFilterMod("vflip", Statics.project.width, Statics.project.height)
             //filter.start()
@@ -31,13 +29,14 @@ class VideoRenderer {
                 Alert(Alert.AlertType.ERROR, "オブジェクトの最終位置を特定できませんでした", ButtonType.OK)
                 return
             }
+            GlCanvas.instance.startRenderMode()
             while (GlCanvas.instance.currentFrame < end) {
                 GlCanvas.instance.display()
                 GlCanvas.instance.currentFrame++
             }
 
             endEncode()
-            GlCanvas.instance.rendering = false
+            GlCanvas.instance.endRenderMode()
         }
 
         fun recordFrame(buf: ByteBuffer) {

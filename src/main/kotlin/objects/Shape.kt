@@ -35,7 +35,7 @@ class Shape : DrawableObject() {
         }
     }
 
-    override fun onDraw(gl: GL2, mode: DrawMode) {
+    override fun onDraw(gl: GL2, mode: Drawable.DrawMode) {
         super.onDraw(gl, mode)
         
         gl.glColor4d(color.value.red,color.value.green,color.value.blue,color.value.opacity)

@@ -129,7 +129,7 @@ class Video : DrawableObject() {
         uiObject?.onScaleChanged()
     }
 
-    override fun onDraw(gl: GL2, mode: DrawMode) {
+    override fun onDraw(gl: GL2, mode: Drawable.DrawMode) {
         super.onDraw(gl, mode)
 
         if (isGrabberStarted) {

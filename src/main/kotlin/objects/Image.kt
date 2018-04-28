@@ -45,7 +45,7 @@ class Image : DrawableObject(){
         })
     }
 
-    override fun onDraw(gl: GL2, mode: DrawMode) {
+    override fun onDraw(gl: GL2, mode: Drawable.DrawMode) {
         super.onDraw(gl, mode)
 
         val tex = texture ?: return

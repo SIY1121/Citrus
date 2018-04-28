@@ -94,19 +94,16 @@ class GlCanvas : GLJPanel(), GLEventListener {
     }
 
     override fun display(p0: GLAutoDrawable?) {
-
-        gl.glClear(GL2.GL_COLOR_BUFFER_BIT)
         gl2.glMatrixMode(GL2.GL_MODELVIEW)
         gl2.glLoadIdentity()
 
-
         if (rendering) {
+            gl2.glScaled(1.0,-1.0,1.0)
             gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
             gl2.glDrawBuffer(GL2.GL_COLOR_ATTACHMENT0)
-            gl2.glViewport(0,0,Statics.project.width,Statics.project.height)
-            gl2.glScaled(1.0,-1.0,1.0)
-            gl.glClear(GL2.GL_COLOR_BUFFER_BIT)
         }
+
+        gl.glClear(GL2.GL_COLOR_BUFFER_BIT)
 
         for (o in currentObjects)
             o.value.onSuperFrame(currentFrame)
@@ -122,6 +119,30 @@ class GlCanvas : GLJPanel(), GLEventListener {
 
     override fun dispose(p0: GLAutoDrawable?) {
 
+    }
+
+    fun startRenderMode(){
+        invoke(true,{drawable ->
+            val gl = drawable.gl.gL2
+            gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
+            gl.glDrawBuffer(GL2.GL_COLOR_ATTACHMENT0)
+            gl.glViewport(0,0,Statics.project.width,Statics.project.height)
+            animator.stop()
+            currentFrame = 0
+            false
+        })
+        rendering = true
+    }
+    fun endRenderMode(){
+        rendering = false
+        invoke(true,{drawable ->
+            val gl = drawable.gl.gL2
+            gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0)
+            gl.glDrawBuffer(GL2.GL_COLOR_ATTACHMENT0)
+            gl.glViewport(0,0,surfaceWidth,surfaceHeight)
+            animator.start()
+            false
+        })
     }
 
 }
