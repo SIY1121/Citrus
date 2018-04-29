@@ -9,7 +9,6 @@ import javafx.scene.Scene
 import javafx.scene.control.ListView
 import javafx.stage.Modality
 import javafx.stage.Stage
-import util.Statics
 import java.net.URL
 import java.util.*
 
@@ -28,7 +27,7 @@ class Welcome : Initializable {
         dialog.initOwner(listView.scene.window)
         dialog.showAndWait()
 
-        if (Statics.project.initialized)
+        if (Main.project.initialized)
             listView.scene.window.hide()
     }
 

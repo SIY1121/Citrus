@@ -11,7 +11,7 @@ import ui.GlCanvas
  * 座標、拡大率、透明度などをもつ
  */
 @CObject("描画")
-abstract class DrawableObject : CitrusObject(), Drawable {
+abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene), Drawable {
     var selected: Boolean = false
     var enabledSelectedOutline: Boolean = true
 

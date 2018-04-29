@@ -17,10 +17,10 @@ import org.bytedeco.javacv.Frame
 import properties.CAnimatableDoubleProperty
 import properties.CFileProperty
 import properties.CIntegerProperty
+import ui.Main
 import ui.WindowFactory
 import ui.TimeLineObject
 import ui.TimelineController
-import util.Statics
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -32,7 +32,7 @@ import javax.sound.sampled.SourceDataLine
 
 @CObject("音声", "388E3CFF", "img/ic_music.png")
 @CDroppable(["ac3", "aac", "adts", "aif", "aiff", "afc", "aifc", "amr", "au", "bit", "caf", "dts", "eac3", "flac", "g722", "tco", "rco", "gsm", "lbc", "latm", "loas", "mka", "mp2", "m2a", "mpa", "mp3", "oga", "oma", "opus", "spx", "tta", "voc", "wav", "wv"])
-class Audio : CitrusObject(),AudioSampleProvider {
+class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),AudioSampleProvider {
 
     @CProperty("ファイル", 0)
     val file = CFileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
@@ -105,7 +105,7 @@ class Audio : CitrusObject(),AudioSampleProvider {
             //波形描画
             renderWaveForm()
 
-            audioLength = ((grabber?.lengthInFrames ?: 1) * (Statics.project.fps / (grabber?.frameRate
+            audioLength = ((grabber?.lengthInFrames ?: 1) * (Main.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
             startPos.max = audioLength
             end = start + audioLength
@@ -145,9 +145,9 @@ class Audio : CitrusObject(),AudioSampleProvider {
         if (isGrabberStarted) {
             if (oldFrame != frame) {
                 //再生時の遅延を考慮して5フレーム分先読み
-                val now = ((frame + 5 + startPos.value.toInt()) * (1.0 / Statics.project.fps) * 1000 * 1000).toLong()
+                val now = ((frame + 5 + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
                 //30フレーム以上のスキップでシーク
-                if (Math.abs(frame - oldFrame) > 30) {
+                if (Math.abs(frame - oldFrame) > 200) {
                     TimelineController.wait = true
                     grabber?.timestamp = now - 1000
                     TimelineController.wait = false

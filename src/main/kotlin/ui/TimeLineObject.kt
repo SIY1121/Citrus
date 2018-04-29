@@ -17,7 +17,6 @@ import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import objects.*
 import properties.CitrusProperty
-import util.Statics
 
 
 class TimeLineObject(var cObject: CitrusObject, val timelineController: TimelineController) : VBox(),
@@ -278,8 +277,8 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         popupRoot.children.add(Label("コピー"))
         val divideLabel = Label("分割")
         divideLabel.setOnMouseClicked {
-            timelineController.addObject(cObject.javaClass, cObject.layer, null, timelineController.glCanvas.currentFrame, cObject.end)
-            cObject.end = timelineController.glCanvas.currentFrame
+            timelineController.addObject(cObject.javaClass, cObject.layer, null, timelineController.currentFrame, cObject.end)
+            cObject.end = timelineController.currentFrame
             onScaleChanged()
         }
         popupRoot.children.add(divideLabel)
@@ -360,7 +359,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
     fun onDelete() {
         (parent as Pane).children.remove(this)
-        Statics.project.Layer[cObject.layer].remove(cObject)
+        Main.project.scene[timelineController.selectedScene][cObject.layer].remove(cObject)
         println("ondelete")
     }
 

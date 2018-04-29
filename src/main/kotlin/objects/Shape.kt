@@ -7,10 +7,10 @@ import javafx.scene.paint.Color
 import properties.CAnimatableDoubleProperty
 import properties.CColorProperty
 import properties.CSelectableProperty
-import util.Statics
+import ui.Main
 
 @CObject("図形", "607D8BFF", "img/ic_shape.png")
-class Shape : DrawableObject() {
+class Shape(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
     enum class Type {
         Ellipse, Rectangle, Triangle, Background
     }
@@ -60,10 +60,10 @@ class Shape : DrawableObject() {
             }
             Type.Background -> {
                 gl.glBegin(GL2.GL_QUADS)
-                gl.glVertex3d(-Statics.project.width / 2.0, -Statics.project.height / 2.0, 0.0)
-                gl.glVertex3d(-Statics.project.width / 2.0, Statics.project.height / 2.0, 0.0)
-                gl.glVertex3d(Statics.project.width / 2.0, Statics.project.height / 2.0, 0.0)
-                gl.glVertex3d(Statics.project.width / 2.0, -Statics.project.height / 2.0, 0.0)
+                gl.glVertex3d(-Main.project.width / 2.0, -Main.project.height / 2.0, 0.0)
+                gl.glVertex3d(-Main.project.width / 2.0, Main.project.height / 2.0, 0.0)
+                gl.glVertex3d(Main.project.width / 2.0, Main.project.height / 2.0, 0.0)
+                gl.glVertex3d(Main.project.width / 2.0, -Main.project.height / 2.0, 0.0)
                 gl.glEnd()
             }
             Type.Ellipse -> {

@@ -8,36 +8,33 @@ import com.jogamp.opengl.awt.GLJPanel
 import com.jogamp.opengl.glu.GLU
 import com.jogamp.opengl.util.FPSAnimator
 import objects.CitrusObject
-import util.Statics
-import util.VideoRenderer
-import java.nio.ByteBuffer
 import java.nio.IntBuffer
 
 class GlCanvas : GLJPanel(), GLEventListener {
 
-    var currentFrame = 0
-        set(value) {
-            field = value
-            for (i in 0 until Statics.project.Layer.size) {
-                //i番目のレイヤーで、前回のオブジェクトの範囲を外れた場合か、そもそもなかった場合
-                //新たなオブジェクトを検索
-                if (currentObjects[i]?.isActive(field) != true) {
-                    currentObjects.remove(i)
-                    //println("remove$i")
-                    for (o in Statics.project.Layer[i]) {
-                        //新たなオブジェクトを見つけた場合
-                        //セット
-                        if (o.isActive(field)) {
-                            currentObjects[i] = o
-                            break
-                        }
-                    }
-                }
-            }
-        }
+//    var currentFrame = 0
+//        set(value) {
+//            field = value
+//            for (i in 0 until Statics.project.Layer.size) {
+//                //i番目のレイヤーで、前回のオブジェクトの範囲を外れた場合か、そもそもなかった場合
+//                //新たなオブジェクトを検索
+//                if (currentObjects[i]?.isActive(field) != true) {
+//                    currentObjects.remove(i)
+//                    //println("remove$i")
+//                    for (o in Statics.project.Layer[i]) {
+//                        //新たなオブジェクトを見つけた場合
+//                        //セット
+//                        if (o.isActive(field)) {
+//                            currentObjects[i] = o
+//                            break
+//                        }
+//                    }
+//                }
+//            }
+//        }
 
 
-    val animator = FPSAnimator(Statics.project.fps)
+    val animator = FPSAnimator(Main.project.fps)
 
     companion object {
         lateinit var instance: GlCanvas
@@ -75,45 +72,45 @@ class GlCanvas : GLJPanel(), GLEventListener {
         frameBufID = bb.get()
 
         gl2.glBindRenderbuffer(GL2.GL_RENDERBUFFER, renderBufID)
-        gl2.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL.GL_RGB, Statics.project.width, Statics.project.height)
+        gl2.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL.GL_RGB, Main.project.width, Main.project.height)
 
         gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
         gl2.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, GL2.GL_RENDERBUFFER, renderBufID)
 
 
-        animator.add(p0)
-        animator.start()
+//        animator.add(p0)
+//        animator.start()
     }
 
     override fun reshape(p0: GLAutoDrawable?, p1: Int, p2: Int, p3: Int, p4: Int) {
         gl2.glMatrixMode(GL2.GL_PROJECTION)
         gl2.glLoadIdentity()
         //gl2.glOrtho(-Statics.project.width/2.0,Statics.project.width/2.0,-Statics.project.height/2.0,Statics.project.height/2.0,0.1,100.0)
-        glu.gluPerspective(90.0, Statics.project.width.toDouble() / Statics.project.height, 1.0, Statics.project.width.toDouble())
-        glu.gluLookAt(0.0, 0.0, Statics.project.height / 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        glu.gluPerspective(90.0, Main.project.width.toDouble() / Main.project.height, 1.0, Main.project.width.toDouble())
+        glu.gluLookAt(0.0, 0.0, Main.project.height / 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
     }
 
     override fun display(p0: GLAutoDrawable?) {
-        gl2.glMatrixMode(GL2.GL_MODELVIEW)
-        gl2.glLoadIdentity()
-
-        if (rendering) {
-            gl2.glScaled(1.0,-1.0,1.0)
-            gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
-            gl2.glDrawBuffer(GL2.GL_COLOR_ATTACHMENT0)
-        }
-
-        gl.glClear(GL2.GL_COLOR_BUFFER_BIT)
-
-        for (o in currentObjects)
-            o.value.onSuperFrame(currentFrame)
-
-        if (rendering) {
-            val buf = ByteBuffer.allocate(Statics.project.width * Statics.project.height * 3)
-            gl2.glReadBuffer(GL2.GL_COLOR_ATTACHMENT0)
-            gl2.glReadPixels(0, 0, Statics.project.width, Statics.project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
-            VideoRenderer.recordFrame(buf)
-        }
+//        gl2.glMatrixMode(GL2.GL_MODELVIEW)
+//        gl2.glLoadIdentity()
+//
+//        if (rendering) {
+//            gl2.glScaled(1.0,-1.0,1.0)
+//            gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
+//            gl2.glDrawBuffer(GL2.GL_COLOR_ATTACHMENT0)
+//        }
+//
+//        gl.glClear(GL2.GL_COLOR_BUFFER_BIT)
+//
+//        for (o in currentObjects)
+//            o.value.onSuperFrame(currentFrame)
+//
+//        if (rendering) {
+//            val buf = ByteBuffer.allocate(Statics.project.width * Statics.project.height * 3)
+//            gl2.glReadBuffer(GL2.GL_COLOR_ATTACHMENT0)
+//            gl2.glReadPixels(0, 0, Statics.project.width, Statics.project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
+//            VideoRenderer.recordFrame(buf)
+//        }
 
     }
 
@@ -126,9 +123,9 @@ class GlCanvas : GLJPanel(), GLEventListener {
             val gl = drawable.gl.gL2
             gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
             gl.glDrawBuffer(GL2.GL_COLOR_ATTACHMENT0)
-            gl.glViewport(0,0,Statics.project.width,Statics.project.height)
+            gl.glViewport(0,0,Main.project.width,Main.project.height)
             animator.stop()
-            currentFrame = 0
+            //currentFrame = 0
             false
         })
         rendering = true

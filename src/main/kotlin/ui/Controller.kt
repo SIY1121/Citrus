@@ -14,7 +14,6 @@ import javafx.stage.Modality
 import javafx.stage.Stage
 import org.bytedeco.javacpp.avcodec
 import org.bytedeco.javacpp.avformat
-import util.Statics
 import util.VideoRenderer
 import java.net.URL
 import java.util.*
@@ -69,7 +68,7 @@ class Controller : Initializable {
     }
 
     val listener = InvalidationListener{
-        val w = canvasWrapper.width - Statics.project.width.toDouble()/Statics.project.height*canvasWrapper.height
+        val w = canvasWrapper.width - Main.project.width.toDouble()/Main.project.height*canvasWrapper.height
         AnchorPane.setLeftAnchor(glCanvas,w/2.0)
         AnchorPane.setRightAnchor(glCanvas,w/2.0)
     }

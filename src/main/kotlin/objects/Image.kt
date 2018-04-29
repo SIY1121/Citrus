@@ -14,7 +14,7 @@ import java.io.File
 
 @CObject("画像", "00796BFF", "img/ic_photo.png")
 @CDroppable(["png", "jpg", "jpeg", "bmp", "gif", "tif"])
-class Image : DrawableObject() {
+class Image(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
 
 
     override val id = "citrus/image"

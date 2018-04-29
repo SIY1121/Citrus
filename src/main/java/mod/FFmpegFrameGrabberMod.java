@@ -528,9 +528,9 @@ public class FFmpegFrameGrabberMod extends FrameGrabber {
                     Iterator var14;
                     Entry e;
                     if (this.video_st != null) {
-                        if (video_par.codec_id() == avcodec.AV_CODEC_ID_H264)
-                            codec = avcodec.avcodec_find_decoder_by_name("h264_cuvid");
-                        else
+//                        if (video_par.codec_id() == avcodec.AV_CODEC_ID_H264)
+//                            codec = avcodec.avcodec_find_decoder_by_name("h264_qsv");
+//                        else
                             codec = avcodec.avcodec_find_decoder(video_par.codec_id());
 
                         if (codec == null) {

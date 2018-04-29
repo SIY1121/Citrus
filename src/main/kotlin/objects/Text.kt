@@ -19,7 +19,7 @@ import java.nio.ByteBuffer
 import java.nio.IntBuffer
 
 @CObject("テキスト", "1976D2FF", "img/ic_text.png")
-class Text : DrawableObject() {
+class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
     override val id = "citrus/text"
     override val name = "テキスト"
 

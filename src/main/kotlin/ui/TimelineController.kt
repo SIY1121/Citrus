@@ -19,7 +19,8 @@ import javafx.scene.shape.Rectangle
 import javafx.scene.text.Font
 import objects.CitrusObject
 import objects.ObjectManager
-import util.Statics
+import project.Layer
+import project.ProjectRenderer
 import java.net.URL
 import java.util.*
 import kotlin.collections.ArrayList
@@ -55,38 +56,47 @@ class TimelineController : Initializable {
 
     lateinit var glCanvas: GlCanvas
 
+    lateinit var projectRenderer: ProjectRenderer
+
+    var selectedScene = 0
+
+    var currentFrame = 0
+        set(value){
+            field = value
+            projectRenderer.renderPreview(field)
+        }
 
     var parentController: Controller = Controller()
         set(value) {
             field = value
 
-            parentController.rootPane.setOnKeyPressed {
-                when (it.code) {
-                    KeyCode.SPACE -> {
-                        if (!playing) play()
-                        else stop()
-                    }
-                    KeyCode.RIGHT -> {
-                        glCanvas.currentFrame++
-                        caret.layoutX = glCanvas.currentFrame * pixelPerFrame
-                    }
-                    KeyCode.LEFT -> {
-                        glCanvas.currentFrame--
-                        caret.layoutX = glCanvas.currentFrame * pixelPerFrame
-                    }
-                    KeyCode.DELETE -> {
-                        allTimelineObjects.filter { it.strictSelected }.forEach {
-                            it.onDelete()
-                            allTimelineObjects.remove(it)
-                        }
-                        glCanvas.currentObjects.clear()
-                        glCanvas.currentFrame = glCanvas.currentFrame
-                    }
-                    else -> {
-                        //Nothing to do
-                    }
-                }
-            }
+//            parentController.rootPane.setOnKeyPressed {
+//                when (it.code) {
+//                    KeyCode.SPACE -> {
+//                        if (!playing) play()
+//                        else stop()
+//                    }
+//                    KeyCode.RIGHT -> {
+//                        currentFrame++
+//                        caret.layoutX = currentFrame * pixelPerFrame
+//                    }
+//                    KeyCode.LEFT -> {
+//                        currentFrame--
+//                        caret.layoutX = currentFrame * pixelPerFrame
+//                    }
+//                    KeyCode.DELETE -> {
+//                        allTimelineObjects.filter { it.strictSelected }.forEach {
+//                            it.onDelete()
+//                            allTimelineObjects.remove(it)
+//                        }
+//                        glCanvas.currentObjects.clear()
+//                        currentFrame = currentFrame
+//                    }
+//                    else -> {
+//                        //Nothing to do
+//                    }
+//                }
+//            }
         }
 
     var layerCount = 0
@@ -107,7 +117,7 @@ class TimelineController : Initializable {
         var pixelPerFrame = 2.0
     }
 
-    var tick: Double = Statics.project.fps.toDouble()
+    var tick: Double = Main.project.fps.toDouble()
 
     val offsetX: Double
         get() = layerScrollPane.hvalue * (layerVBox.width - layerScrollPane.viewportBounds.width)
@@ -131,7 +141,7 @@ class TimelineController : Initializable {
         })
         scaleSlider.valueProperty().addListener({ _, _, n ->
             pixelPerFrame = n.toDouble()
-            tick = Statics.project.fps * (1.0 / pixelPerFrame)
+            tick = Main.project.fps * (1.0 / pixelPerFrame)
             //tick = 1.0 / pixelPerFrame
             for (pane in layerVBox.children)
                 if (pane is Pane)
@@ -165,12 +175,12 @@ class TimelineController : Initializable {
                     else stop()
                 }
                 KeyCode.RIGHT -> {
-                    glCanvas.currentFrame++
-                    caret.layoutX = glCanvas.currentFrame * pixelPerFrame
+                    currentFrame++
+                    caret.layoutX = currentFrame * pixelPerFrame
                 }
                 KeyCode.LEFT -> {
-                    glCanvas.currentFrame--
-                    caret.layoutX = glCanvas.currentFrame * pixelPerFrame
+                    currentFrame--
+                    caret.layoutX = currentFrame * pixelPerFrame
                 }
                 KeyCode.DELETE -> {
                     allTimelineObjects.filter { it.strictSelected }.forEach {
@@ -178,7 +188,7 @@ class TimelineController : Initializable {
                         allTimelineObjects.remove(it)
                     }
                     glCanvas.currentObjects.clear()
-                    glCanvas.currentFrame = glCanvas.currentFrame
+                    currentFrame = currentFrame
                 }
                 else -> {
                     //Nothing to do
@@ -197,7 +207,7 @@ class TimelineController : Initializable {
 
 
         caret.layoutXProperty().addListener({ _, _, n ->
-            glCanvas.currentFrame = (n.toDouble() / pixelPerFrame).toInt()
+            currentFrame = (n.toDouble() / pixelPerFrame).toInt()
             if (topCaret.layoutX >= timelineAxis.width)
                 if (playing) layerScrollPane.hvalue += layerScrollPane.width / (layerVBox.width - layerScrollPane.viewportBounds.width)
                 else layerScrollPane.hvalue += 0.05
@@ -288,20 +298,21 @@ class TimelineController : Initializable {
 
         layerCount++
 
-        Statics.project.Layer.add(ArrayList())
+        Main.project.scene[selectedScene].add(Layer())
         caret.endY = layerCount * layerHeight
     }
 
     fun addObject(clazz: Class<*>, layerIndex: Int, file: String? = null, start: Int? = null, end: Int? = null) {
         val layerPane = layerVBox.children[layerIndex] as Pane
-        val cObject = (clazz.newInstance() as CitrusObject)
+        //TODO リフレクションの動作が不安定
+        val cObject = (clazz.getConstructor(Int::class.java,Int::class.java).newInstance(layerIndex, selectedScene) as CitrusObject)
         cObject.layer = layerIndex
         val o = TimeLineObject(cObject, this)
         o.prefHeight = layerHeight * 2
         o.style = "-fx-background-color:#${o.color.darker().toString().substring(2)};"
 
-        cObject.start = start ?: glCanvas.currentFrame
-        cObject.end = end ?: (cObject.start + defaultObjectLength * Statics.project.fps).toInt()
+        cObject.start = start ?: currentFrame
+        cObject.end = end ?: (cObject.start + defaultObjectLength * Main.project.fps).toInt()
         //o.prefWidth = 200.0
         o.onScaleChanged()
         o.setOnMousePressed {
@@ -324,7 +335,7 @@ class TimelineController : Initializable {
             }
         }
         caret.layoutXProperty().addListener { _, _, _ ->
-            if (cObject.isActive(glCanvas.currentFrame)) o.onCaretChanged(glCanvas.currentFrame)
+            if (cObject.isActive(currentFrame)) o.onCaretChanged(currentFrame)
         }
         allTimelineObjects.add(o)
         layerPane.children.add(o)
@@ -332,7 +343,7 @@ class TimelineController : Initializable {
         layerScrollPane.layout()
         if (file != null) cObject.onFileDropped(file)
         glCanvas.currentObjects.clear()
-        glCanvas.currentFrame = glCanvas.currentFrame
+        currentFrame = currentFrame
     }
 
     private fun drawAxis() {
@@ -345,7 +356,7 @@ class TimelineController : Initializable {
         for (i in (offsetX / (tick * pixelPerFrame)).toInt()..((timelineAxis.width / (tick * pixelPerFrame)).toInt() + (offsetX / (tick * pixelPerFrame)).toInt() + 1)) {
             val x = i * tick * pixelPerFrame - offsetX
             if (i % 6 == 0) {
-                g.fillText("${(i * tick / Statics.project.fps).toTimeString()}s", x, 20.0)
+                g.fillText("${(i * tick / Main.project.fps).toTimeString()}s", x, 20.0)
                 g.strokeLine(x, 20.0, x, 35.0)
             } else {
                 g.strokeLine(x, 25.0, x, 35.0)
@@ -414,7 +425,7 @@ class TimelineController : Initializable {
             }
         else {
             caret.layoutX = mouseEvent.x
-            if(caret.layoutX<0)caret.layoutX = 0.0
+            if (caret.layoutX < 0) caret.layoutX = 0.0
         }
 
     }
@@ -429,7 +440,7 @@ class TimelineController : Initializable {
 
         if (selectedObjects.isNotEmpty()) {
             glCanvas.currentObjects.clear()
-            glCanvas.currentFrame = glCanvas.currentFrame
+            currentFrame = currentFrame
             //println("${glCanvas.currentObjects.size}")
         }
 
@@ -440,7 +451,7 @@ class TimelineController : Initializable {
     private fun snapObjectOnMove(o: TimeLineObject) {
         //スナップ実装
 
-        val nearest = Statics.project.Layer.flatten().filter {
+        val nearest = Main.project.scene[selectedScene].flatten().filter {
             it != o.cObject && it.start <= o.cObject.end + 5 && o.cObject.start <= it.end + 5//スナップの基準になりうる位置のオブジェクトを絞る
         }.minBy {
             intArrayOf(
@@ -467,7 +478,7 @@ class TimelineController : Initializable {
         //スナップ実装終わり
 
         //重複防止
-        val block = Statics.project.Layer[o.cObject.layer].firstOrNull { it != o.cObject && it.start <= o.cObject.end && o.cObject.start <= it.end }//重複する当たり判定を行う
+        val block = Main.project.scene[selectedScene][o.cObject.layer].firstOrNull { it != o.cObject && it.start <= o.cObject.end && o.cObject.start <= it.end }//重複する当たり判定を行う
         if (block != null)
             o.layoutX = if (Math.abs(block.start - o.cObject.end) < Math.abs(o.cObject.start - block.end))
                 block.start * pixelPerFrame - o.width
@@ -477,7 +488,7 @@ class TimelineController : Initializable {
     }
 
     private fun snapObjectOnIncrement(o: TimeLineObject) {
-        val nearest = Statics.project.Layer.flatten().filter { it != o.cObject && it.start - 5 <= o.cObject.end && o.cObject.end <= it.end + 5 }//スナップの基準になりうる位置のオブジェクトを絞る
+        val nearest = Main.project.scene[selectedScene].flatten().filter { it != o.cObject && it.start - 5 <= o.cObject.end && o.cObject.end <= it.end + 5 }//スナップの基準になりうる位置のオブジェクトを絞る
                 .minBy { Math.min(Math.abs(it.start - o.cObject.end), Math.abs(it.end - o.cObject.end)) }//スナップしうる２つのパターンの内、最も移動距離が短いものを選び、さらに一番移動距離が短いものを選ぶ
         if (nearest != null && Math.min(Math.abs(nearest.start - o.cObject.end), Math.abs(nearest.end - o.cObject.end)) < 5) {
             o.prefWidth = if (Math.abs(nearest.start - o.cObject.end) < Math.abs(nearest.end - o.cObject.end))
@@ -488,7 +499,7 @@ class TimelineController : Initializable {
             println(o.prefWidth)
         }
 
-        val block = Statics.project.Layer[o.cObject.layer].firstOrNull { it != o.cObject && it.start <= o.cObject.end }//重複する当たり判定を行う
+        val block = Main.project.scene[selectedScene][o.cObject.layer].firstOrNull { it != o.cObject && it.start <= o.cObject.end }//重複する当たり判定を行う
         if (block != null)
             o.prefWidth = (block.start - o.cObject.start) * pixelPerFrame
 
@@ -497,7 +508,7 @@ class TimelineController : Initializable {
     private fun snapObjectOnDecrement(o: TimeLineObject) {
         val right = o.layoutX + o.prefWidth//スナップによる位置ずれを補正するために、あらかしめ右端の座標を記録しておく
 
-        val nearest = Statics.project.Layer.flatten().filter { it != o.cObject && it.start - 5 <= o.cObject.start && o.cObject.start <= it.end + 5 }//スナップの基準になりうる位置のオブジェクトを絞る
+        val nearest = Main.project.scene[selectedScene].flatten().filter { it != o.cObject && it.start - 5 <= o.cObject.start && o.cObject.start <= it.end + 5 }//スナップの基準になりうる位置のオブジェクトを絞る
                 .minBy { Math.min(Math.abs(it.start - o.cObject.start), Math.abs(it.end - o.cObject.start)) }//スナップしうる２つのパターンの内、最も移動距離が短いものを選び、さらに一番移動距離が短いものを選ぶ
 
         if (nearest != null && Math.min(Math.abs(nearest.start - o.cObject.start), Math.abs(nearest.end - o.cObject.start)) < 5) {
@@ -507,7 +518,7 @@ class TimelineController : Initializable {
                 nearest.end * pixelPerFrame
         }
 
-        val block = Statics.project.Layer[o.cObject.layer].firstOrNull { it != o.cObject && o.cObject.start <= it.end }//重複する当たり判定を行う
+        val block = Main.project.scene[selectedScene][o.cObject.layer].firstOrNull { it != o.cObject && o.cObject.start <= it.end }//重複する当たり判定を行う
         if (block != null)
             o.layoutX = block.end * pixelPerFrame
 
@@ -518,12 +529,12 @@ class TimelineController : Initializable {
     fun play() {
         playing = true
         val start = System.currentTimeMillis()
-        val startFrame = glCanvas.currentFrame
+        val startFrame = currentFrame
         Thread({
             while (playing) {
-                glCanvas.currentFrame = startFrame + ((System.currentTimeMillis() - start) / (1000.0 / Statics.project.fps)).toInt()
-                Platform.runLater { caret.layoutX = glCanvas.currentFrame * pixelPerFrame }
-                Thread.sleep((1.0 / Statics.project.fps * 1000.0 - 5.0).toLong())
+                currentFrame = startFrame + ((System.currentTimeMillis() - start) / (1000.0 / Main.project.fps)).toInt()
+                Platform.runLater { caret.layoutX = currentFrame * pixelPerFrame }
+                Thread.sleep((1.0 / Main.project.fps * 1000.0 - 5.0).toLong())
                 while (wait)
                     Thread.sleep(50)
             }

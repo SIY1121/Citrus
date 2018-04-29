@@ -3,7 +3,6 @@ package ui
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.control.Spinner
-import util.Statics
 
 class CreateProject {
 
@@ -17,10 +16,10 @@ class CreateProject {
     lateinit var samplerateSpinner : Spinner<Int>
 
     fun onOkClicked(actionEvent: ActionEvent) {
-        Statics.project.width = widthSpinner.value
-        Statics.project.height = heightSpinner.value
-        Statics.project.fps = fpsSpinner.value
-        Statics.project.initialized = true
+        Main.project.width = widthSpinner.value
+        Main.project.height = heightSpinner.value
+        Main.project.fps = fpsSpinner.value
+        Main.project.initialized = true
         widthSpinner.scene.window.hide()
     }
 }
