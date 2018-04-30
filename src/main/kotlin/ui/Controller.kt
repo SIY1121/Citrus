@@ -47,8 +47,8 @@ class Controller : Initializable {
     override fun initialize(location: URL?, resources: ResourceBundle?) {
         println("initialize")
         canvas = GlCanvas()
+        glCanvas.content = canvas
         timelineController.parentController = this
-        timelineController.glCanvas = canvas
 
         borderPane.prefWidthProperty().bind(rootPane.widthProperty())
         borderPane.prefHeightProperty().bind(rootPane.heightProperty())
@@ -57,7 +57,6 @@ class Controller : Initializable {
 
         SplashController.notifyProgress(0.7,"OpenGLを初期化中...")
 
-        glCanvas.content = canvas
     }
 
     fun showWelcomeScreen(){

@@ -4,7 +4,7 @@ import com.jogamp.opengl.GL2
 import objects.AudioSampleProvider
 import objects.Drawable
 
-class Scene : ArrayList<Layer>(), Drawable,AudioSampleProvider {
+class Scene : ArrayList<Layer>(), Drawable, AudioSampleProvider {
 
     override fun getSamples(frame: Int): ShortArray {
         this.forEach {
@@ -14,6 +14,8 @@ class Scene : ArrayList<Layer>(), Drawable,AudioSampleProvider {
     }
 
     override fun draw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
-
+        forEach {
+            it.draw(gl, mode, frame)
+        }
     }
 }

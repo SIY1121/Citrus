@@ -72,14 +72,12 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
             //Todo ソートは保留
         }
     var end: Int = 1
-    var layer: Int = -1
+    var layer: Int = defLayer
         set(value) {
             //変更された場合
             if (field != value) {
 
-                //初回ではない場合は移動前のレイヤーに残っているはずなので消す
-                if (field != -1)
-                    Main.project.scene[scene][field].remove(this)
+                Main.project.scene[scene][field].remove(this)
 
                 Main.project.scene[scene][value].add(this)
                 //Statics.project.Layer[value].sortBy { it.start }
@@ -90,17 +88,13 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
 
             field = value
 
-
         }
 
-    var scene: Int = -1
-        set(value) {
+    var scene: Int = defScene
+        private set(value) {
             //変更された場合
             if (field != value) {
-
-                //初回ではない場合は移動前のレイヤーに残っているはずなので消す
-                if (field != -1)
-                    Main.project.scene[field][layer].remove(this)
+                Main.project.scene[field][layer].remove(this)
 
                 Main.project.scene[value][layer].add(this)
                 //Statics.project.Layer[value].sortBy { it.start }
@@ -119,10 +113,7 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
 
     init {
         println(pList.size)
-
-        layer = defLayer
-        scene = defScene
-
+        Main.project.scene[scene][layer].add(this)
     }
 
 }

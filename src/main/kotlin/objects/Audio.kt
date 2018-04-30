@@ -147,7 +147,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),Audi
                 //再生時の遅延を考慮して5フレーム分先読み
                 val now = ((frame + 5 + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
                 //30フレーム以上のスキップでシーク
-                if (Math.abs(frame - oldFrame) > 200) {
+                if (Math.abs(frame - oldFrame) > 100 || frame < oldFrame) {
                     TimelineController.wait = true
                     grabber?.timestamp = now - 1000
                     TimelineController.wait = false

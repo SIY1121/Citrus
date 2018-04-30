@@ -135,11 +135,12 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
                 val now = ((frame + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
 
                 //移動距離が30フレーム以上でシーク処理を実行
-                if (Math.abs(frame - oldFrame) > 200 || frame < oldFrame) {
+                if (Math.abs(frame - oldFrame) > 100 || frame < oldFrame) {
                     TimelineController.wait = true
                     grabber?.timestamp = Math.max(now - 10000, 0)
                     TimelineController.wait = false
                     buf = grabber?.grabImage()
+                    println("video $file seek $oldFrame to $frame")
                 }
                 //buf = null
                 //画像フレームを取得できており、タイムスタンプが理想値より上回るまでループ

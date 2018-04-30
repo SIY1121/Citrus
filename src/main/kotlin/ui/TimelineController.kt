@@ -1,5 +1,6 @@
 package ui
 
+import com.jogamp.opengl.awt.GLJPanel
 import javafx.application.Platform
 import javafx.fxml.FXML
 import javafx.fxml.Initializable
@@ -54,22 +55,22 @@ class TimelineController : Initializable {
     @FXML
     lateinit var timelineAxisClipRectangle: Rectangle
 
-    lateinit var glCanvas: GlCanvas
-
-    lateinit var projectRenderer: ProjectRenderer
+    var projectRenderer: ProjectRenderer = ProjectRenderer(Main.project, null)
 
     var selectedScene = 0
 
     var currentFrame = 0
-        set(value){
-            field = value
-            projectRenderer.renderPreview(field)
+        set(value) {
+            if (field != value) {
+                field = value
+                projectRenderer.renderPreview(field)
+            }
         }
 
     var parentController: Controller = Controller()
         set(value) {
             field = value
-
+            projectRenderer.glPanel = field.canvas
 //            parentController.rootPane.setOnKeyPressed {
 //                when (it.code) {
 //                    KeyCode.SPACE -> {
@@ -187,8 +188,7 @@ class TimelineController : Initializable {
                         it.onDelete()
                         allTimelineObjects.remove(it)
                     }
-                    glCanvas.currentObjects.clear()
-                    currentFrame = currentFrame
+                    projectRenderer.updateObject()
                 }
                 else -> {
                     //Nothing to do
@@ -205,9 +205,10 @@ class TimelineController : Initializable {
         hScrollBar.requestLayout()
 
 
-
         caret.layoutXProperty().addListener({ _, _, n ->
-            currentFrame = (n.toDouble() / pixelPerFrame).toInt()
+            if (!playing)//再生時の多重代入を防ぐ
+                currentFrame = (n.toDouble() / pixelPerFrame).toInt()
+
             if (topCaret.layoutX >= timelineAxis.width)
                 if (playing) layerScrollPane.hvalue += layerScrollPane.width / (layerVBox.width - layerScrollPane.viewportBounds.width)
                 else layerScrollPane.hvalue += 0.05
@@ -304,9 +305,9 @@ class TimelineController : Initializable {
 
     fun addObject(clazz: Class<*>, layerIndex: Int, file: String? = null, start: Int? = null, end: Int? = null) {
         val layerPane = layerVBox.children[layerIndex] as Pane
-        //TODO リフレクションの動作が不安定
-        val cObject = (clazz.getConstructor(Int::class.java,Int::class.java).newInstance(layerIndex, selectedScene) as CitrusObject)
-        cObject.layer = layerIndex
+
+        val cObject = clazz.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(layerIndex, selectedScene) as CitrusObject
+
         val o = TimeLineObject(cObject, this)
         o.prefHeight = layerHeight * 2
         o.style = "-fx-background-color:#${o.color.darker().toString().substring(2)};"
@@ -342,8 +343,7 @@ class TimelineController : Initializable {
         o.onMoved(TimeLineObject.EditMode.Move)
         layerScrollPane.layout()
         if (file != null) cObject.onFileDropped(file)
-        glCanvas.currentObjects.clear()
-        currentFrame = currentFrame
+        projectRenderer.updateObject()
     }
 
     private fun drawAxis() {
@@ -439,8 +439,7 @@ class TimelineController : Initializable {
             o.onMoved(editMode)
 
         if (selectedObjects.isNotEmpty()) {
-            glCanvas.currentObjects.clear()
-            currentFrame = currentFrame
+            projectRenderer.updateObject()
             //println("${glCanvas.currentObjects.size}")
         }
 
@@ -531,12 +530,22 @@ class TimelineController : Initializable {
         val start = System.currentTimeMillis()
         val startFrame = currentFrame
         Thread({
+            var o = System.currentTimeMillis()
+            var left = 0.0
             while (playing) {
                 currentFrame = startFrame + ((System.currentTimeMillis() - start) / (1000.0 / Main.project.fps)).toInt()
+                //println("time $left $currentFrame")
                 Platform.runLater { caret.layoutX = currentFrame * pixelPerFrame }
-                Thread.sleep((1.0 / Main.project.fps * 1000.0 - 5.0).toLong())
-                while (wait)
-                    Thread.sleep(50)
+
+                left = 1.0 / Main.project.fps * 1000.0 - (System.currentTimeMillis() - o)
+
+                if (left > 0)
+                    Thread.sleep(left.toLong())
+                //else
+                //    start-=left.toInt() フレームスキップを行わない場合
+
+
+                o = System.currentTimeMillis()
             }
         }).start()
     }
