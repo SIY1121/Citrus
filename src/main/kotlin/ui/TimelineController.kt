@@ -560,8 +560,10 @@ class TimelineController : Initializable {
     }
 
     fun topPaneOnMouseDragged(mouseEvent: MouseEvent) {
-        topCaret.layoutX = mouseEvent.x
-        caret.layoutX = mouseEvent.x + offsetX - 1
+        if(!wait){
+            topCaret.layoutX = mouseEvent.x
+            caret.layoutX = mouseEvent.x + offsetX - 1
+        }
     }
 
     fun topPaneOnMouseReleased(mouseEvent: MouseEvent) {

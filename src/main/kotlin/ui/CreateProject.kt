@@ -19,6 +19,7 @@ class CreateProject {
         Main.project.width = widthSpinner.value
         Main.project.height = heightSpinner.value
         Main.project.fps = fpsSpinner.value
+        Main.project.sampleRate = samplerateSpinner.value
         Main.project.initialized = true
         widthSpinner.scene.window.hide()
     }

@@ -563,6 +563,10 @@ public class FFmpegFrameGrabberMod extends FrameGrabber {
                             this.video_c.time_base().den(1000);
                         }
 
+                        video_c.thread_count(8);
+                        video_c.thread_type(AVCodecContext.FF_THREAD_FRAME);
+                        video_c.flags(video_c.flags() | AVCodecContext.FF_THREAD_FRAME);
+
                         if ((this.picture = avutil.av_frame_alloc()) == null) {
                             throw new Exception("av_frame_alloc() error: Could not allocate raw picture frame.");
                         }

@@ -7,12 +7,19 @@ import com.jogamp.opengl.awt.GLJPanel
 import com.jogamp.opengl.glu.GLU
 import objects.Drawable
 import ui.Main
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.ShortBuffer
+import javax.sound.sampled.AudioFormat
+import javax.sound.sampled.AudioSystem
+import javax.sound.sampled.DataLine
+import javax.sound.sampled.SourceDataLine
 
-class ProjectRenderer(var project: Project, glp : GLJPanel?) : GLEventListener {
+class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     var selectedScene = 0
 
     var glPanel: GLJPanel? = glp
-        set(value){
+        set(value) {
             field?.removeGLEventListener(this)
             value?.addGLEventListener(this)
             field = value
@@ -20,20 +27,35 @@ class ProjectRenderer(var project: Project, glp : GLJPanel?) : GLEventListener {
 
     private var frame = 0
 
-    lateinit var gl2 : GL2
+    lateinit var gl2: GL2
     val glu = GLU()
+
+    val audioLine: SourceDataLine
+
+    var previewAudioLevel = 0.0
+
+    init {
+        val audioFormat = AudioFormat(project.sampleRate.toFloat(), 16, project.audioChannel, true, false)
+        val info = DataLine.Info(SourceDataLine::class.java, audioFormat)
+        audioLine = AudioSystem.getLine(info) as SourceDataLine
+        audioLine.open(audioFormat)
+        audioLine.start()
+    }
 
     fun renderPreview(frame: Int) {
         this.frame = frame
         glPanel?.display()
-        project.scene[selectedScene].getSamples(frame)
+        val samples = project.scene[selectedScene].getSamples(frame)
+        val data = samples.toByteArray()
+        audioLine.write(data, 0, data.size)
+        previewAudioLevel = Math.log10(samples.map {Math.abs(it.toDouble())/Short.MAX_VALUE}.average()) *20
     }
 
     fun renderFinal(frame: Int) {
         this.frame = frame
     }
 
-    fun updateObject(){
+    fun updateObject() {
 
     }
 
@@ -60,4 +82,11 @@ class ProjectRenderer(var project: Project, glp : GLJPanel?) : GLEventListener {
 
     }
 
+
+    //ShortArrayをリトルエンディアンでbyte配列に変換
+    private fun ShortArray.toByteArray(): ByteArray {
+        val byteBuffer = ByteBuffer.allocate(this.size * 2).order(ByteOrder.LITTLE_ENDIAN)
+        byteBuffer.asShortBuffer().put(this)
+        return byteBuffer.array()
+    }
 }

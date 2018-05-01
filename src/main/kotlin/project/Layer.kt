@@ -15,14 +15,15 @@ class Layer : ArrayList<CitrusObject>(), Drawable, AudioSampleProvider {
     override fun getSamples(frame: Int): ShortArray {
         if (currentObject?.isActive(frame) == true) {
             val a = currentObject
-            if (a is AudioSampleProvider) a.getSamples(frame)
+            if (a is AudioSampleProvider)
+                return a.getSamples(frame)
         } else if (currentObject?.isActive(frame) == false) {
             currentObject = null
             currentObject = firstOrNull { it.isActive(frame) }
         } else {
             currentObject = firstOrNull { it.isActive(frame) }
         }
-        return ShortArray(1)
+        return ShortArray(0)
     }
 
     override fun draw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {

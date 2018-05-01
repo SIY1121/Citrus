@@ -10,6 +10,7 @@ import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
 import javafx.stage.FileChooser
 import kotlinx.coroutines.experimental.launch
+import mod.FFmpegFrameGrabberMod
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
 import java.nio.ByteBuffer
@@ -138,6 +139,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
                 if (Math.abs(frame - oldFrame) > 100 || frame < oldFrame) {
                     TimelineController.wait = true
                     grabber?.timestamp = Math.max(now - 10000, 0)
+                    //buf = grabber?.fastSeek(now)
                     TimelineController.wait = false
                     buf = grabber?.grabImage()
                     println("video $file seek $oldFrame to $frame")
@@ -173,5 +175,28 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
         this.get(shortArray)
         byteBuffer.asShortBuffer().put(shortArray)
         return byteBuffer.array()
+    }
+
+    fun FFmpegFrameGrabber.fastSeek(timestamp : Long):Frame?{
+
+        var beforeTimestamp = 0L
+        while(this.timestamp < timestamp - 1000*1000*10){
+            beforeTimestamp = this.timestamp
+            grabKeyFrame()
+            println("key")
+        }
+
+        if(this.timestamp > timestamp)
+            this.timestamp = beforeTimestamp
+
+
+        var frame : Frame? = null
+        while (this.timestamp < timestamp)
+        {
+               frame = grabImage()
+            println("f")
+        }
+
+        return frame
     }
 }

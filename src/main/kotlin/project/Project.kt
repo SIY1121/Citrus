@@ -6,6 +6,8 @@ class Project{
     var width = 1920
     var height = 1080
     var fps = 60
+    var sampleRate = 48000
+    var audioChannel = 2
 
     init{
         scene.add(Scene())

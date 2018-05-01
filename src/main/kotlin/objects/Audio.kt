@@ -32,7 +32,7 @@ import javax.sound.sampled.SourceDataLine
 
 @CObject("音声", "388E3CFF", "img/ic_music.png")
 @CDroppable(["ac3", "aac", "adts", "aif", "aiff", "afc", "aifc", "amr", "au", "bit", "caf", "dts", "eac3", "flac", "g722", "tco", "rco", "gsm", "lbc", "latm", "loas", "mka", "mp2", "m2a", "mpa", "mp3", "oga", "oma", "opus", "spx", "tta", "voc", "wav", "wv"])
-class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),AudioSampleProvider {
+class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), AudioSampleProvider {
 
     @CProperty("ファイル", 0)
     val file = CFileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
@@ -40,7 +40,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),Audi
     @CProperty("音量", 1)
     val volume = CAnimatableDoubleProperty(0.0, 1.0, 1.0, 0.01)
 
-    @CProperty("開始位置",2)
+    @CProperty("開始位置", 2)
     val startPos = CIntegerProperty(min = 0)
 
     private var grabber: FFmpegFrameGrabber? = null
@@ -48,7 +48,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),Audi
 
     private var audioLine: SourceDataLine? = null
 
-    private var oldFrame = -100
+    private var oldFrame = 0
     private var buf: Frame? = null
 
     private var audioLength = 0
@@ -78,8 +78,10 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),Audi
      */
     private val rect = Rectangle(100.0, 30.0)
 
+    private var samplesPerFrame = 0
+
     init {
-        file.valueProperty.addListener { _,_,n->onFileLoad(n.toString()) }
+        file.valueProperty.addListener { _, _, n -> onFileLoad(n.toString()) }
         displayName = "[音声]"
     }
 
@@ -92,8 +94,10 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),Audi
         dialog.show()
         launch {
             grabber = FFmpegFrameGrabber(file)
+            grabber?.sampleRate = Main.project.sampleRate
+            grabber?.audioChannels = Main.project.audioChannel
             grabber?.start()
-            if (grabber?.videoCodec == 0) {
+            if (grabber?.audioCodec == 0) {
                 Platform.runLater {
                     dialog.close()
                     val alert = Alert(Alert.AlertType.ERROR, "音声コーデックを識別できませんでした", ButtonType.CLOSE)
@@ -102,6 +106,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),Audi
                 }
                 return@launch
             }
+            samplesPerFrame = (grabber?.sampleRate ?: Main.project.sampleRate) * (grabber?.audioChannels ?: 2) / Main.project.fps
             //波形描画
             renderWaveForm()
 
@@ -140,7 +145,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),Audi
         hBox.translateX = -(1 - hBox.scaleX) * hBox.width / 2.0
     }
 
-    override fun onFrame(frame : Int) {
+    override fun onFrame(frame: Int) {
         //ファイルの読み込みが完了していた場合
         if (isGrabberStarted) {
             if (oldFrame != frame) {
@@ -168,8 +173,39 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),Audi
         }
     }
 
+    var audioBuf: ShortBuffer? = null
+
     override fun getSamples(frame: Int): ShortArray {
-        return ShortArray(1)
+        if (isGrabberStarted) {
+            if (oldFrame != frame) {
+                val now = ((frame + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
+                val requiredSamples = (frame - oldFrame) * samplesPerFrame
+                val result = ShortArray(requiredSamples)
+                var readed = 0
+                while (readed < requiredSamples) {
+
+                    if (audioBuf?.remaining() == 0 || audioBuf == null)//バッファが空orNullだったら
+                            buf = grabber?.grabSamples()//デコード
+
+                    if (Math.abs(frame - oldFrame) > 100 || frame < oldFrame) {
+                        TimelineController.wait = true
+                        grabber?.timestamp = now - 1000
+                        TimelineController.wait = false
+                        buf = grabber?.grabSamples()
+                    }
+
+                    audioBuf = (buf?.samples?.get(0) as ShortBuffer)
+                    val read = Math.min(requiredSamples - readed, audioBuf?.remaining() ?: (requiredSamples - readed))
+                    audioBuf?.get(result, readed, read)
+                    //println("read $readed <- $read")
+                    readed += read
+                }
+                oldFrame = frame
+                return result
+            }
+        }
+
+        return ShortArray(0)
     }
 
     //ShortArrayをリトルエンディアンでbyte配列に変換
@@ -184,7 +220,8 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),Audi
 
     private fun renderWaveForm() {
         //必要数のキャンバスを作成
-        waveFormCanvases = Array(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution / canvasSize.toDouble()).toInt() + 1, { _ -> Canvas(0.0, 30.0) })
+        waveFormCanvases = Array(((grabber?.lengthInTime
+                ?: 0) / 1000.0 / 1000.0 / resolution / canvasSize.toDouble()).toInt() + 1, { _ -> Canvas(0.0, 30.0) })
         waveFormCanvases[0] = Canvas(canvasSize.toDouble(), 30.0)
         var g = waveFormCanvases[0].graphicsContext2D
 
@@ -193,7 +230,8 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),Audi
         //1キャンバス中で描画したブロックの数
         var blockCount = 0
         //1ブロック分のサンプルを保持しておく配列
-        val shortArray = ShortArray(((grabber?.sampleRate ?: 44100) * (grabber?.audioChannels ?: 2) * resolution).toInt())
+        val shortArray = ShortArray(((grabber?.sampleRate ?: 44100) * (grabber?.audioChannels
+                ?: 2) * resolution).toInt())
         //1ブロック分を読み取るまでのカウンタ
         var read = 0
         //描画を終えたキャンバスの数
@@ -252,7 +290,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene),Audi
             hBox.clip = rect
             hBox.children.addAll(waveFormCanvases)
         }
-
+        grabber?.timestamp = 0L
 
     }
 }
