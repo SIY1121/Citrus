@@ -36,6 +36,10 @@ class Controller : Initializable {
     lateinit var canvasWrapper : Pane
     @FXML
     lateinit var rightPane : AnchorPane
+    @FXML
+    lateinit var leftVolumeBar: VolumeBar
+    @FXML
+    lateinit var rightVolumeBar: VolumeBar
 
 
     lateinit var canvas : GlCanvas

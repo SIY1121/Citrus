@@ -9,7 +9,6 @@ import objects.Drawable
 import ui.Main
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.ShortBuffer
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
@@ -32,7 +31,8 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
 
     val audioLine: SourceDataLine
 
-    var previewAudioLevel = 0.0
+    var leftAudioLevel = 0.0
+    var rightAudioLevel = 0.0
 
     init {
         val audioFormat = AudioFormat(project.sampleRate.toFloat(), 16, project.audioChannel, true, false)
@@ -48,7 +48,8 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         val samples = project.scene[selectedScene].getSamples(frame)
         val data = samples.toByteArray()
         audioLine.write(data, 0, data.size)
-        previewAudioLevel = Math.log10(samples.map {Math.abs(it.toDouble())/Short.MAX_VALUE}.average()) *20
+        leftAudioLevel = Math.log(samples.filterIndexed { index, _ -> index % 2 == 0 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.average() ?: 0.01) * 20
+        rightAudioLevel = Math.log(samples.filterIndexed { index, _ -> index % 2 == 1 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.average() ?: 0.01) * 20
     }
 
     fun renderFinal(frame: Int) {

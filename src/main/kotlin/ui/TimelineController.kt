@@ -1,6 +1,5 @@
 package ui
 
-import com.jogamp.opengl.awt.GLJPanel
 import javafx.application.Platform
 import javafx.fxml.FXML
 import javafx.fxml.Initializable
@@ -64,6 +63,8 @@ class TimelineController : Initializable {
             if (field != value) {
                 field = value
                 projectRenderer.renderPreview(field)
+                parentController.leftVolumeBar.value = Math.max(projectRenderer.leftAudioLevel + 100, 0.0)
+                parentController.rightVolumeBar.value = Math.max(projectRenderer.rightAudioLevel + 100, 0.0)
             }
         }
 
@@ -560,7 +561,7 @@ class TimelineController : Initializable {
     }
 
     fun topPaneOnMouseDragged(mouseEvent: MouseEvent) {
-        if(!wait){
+        if (!wait) {
             topCaret.layoutX = mouseEvent.x
             caret.layoutX = mouseEvent.x + offsetX - 1
         }
