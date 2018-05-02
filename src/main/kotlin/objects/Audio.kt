@@ -106,9 +106,10 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                 }
                 return@launch
             }
-            samplesPerFrame = (grabber?.sampleRate ?: Main.project.sampleRate) * (grabber?.audioChannels ?: 2) / Main.project.fps
+            samplesPerFrame = (grabber?.sampleRate ?: Main.project.sampleRate) * (grabber?.audioChannels
+                    ?: 2) / Main.project.fps
             //波形描画
-            renderWaveForm()
+            //renderWaveForm()
 
             audioLength = ((grabber?.lengthInFrames ?: 1) * (Main.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
@@ -179,20 +180,22 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         if (isGrabberStarted) {
             if (oldFrame != frame) {
                 val now = ((frame + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
-                val requiredSamples = (frame - oldFrame) * samplesPerFrame
+                //
+                val requiredSamples = if (frame - oldFrame in 1..99) (frame - oldFrame) * samplesPerFrame else samplesPerFrame
                 val result = ShortArray(requiredSamples)
                 var readed = 0
+
+                if (Math.abs(frame - oldFrame) >= 100 || frame < oldFrame) {
+                    TimelineController.wait = true
+                    grabber?.timestamp = now - (1.0 / Main.project.fps * 1000 * 1000).toLong()
+                    TimelineController.wait = false
+                    buf = grabber?.grabSamples()
+                }
+
                 while (readed < requiredSamples) {
 
                     if (audioBuf?.remaining() == 0 || audioBuf == null)//バッファが空orNullだったら
-                            buf = grabber?.grabSamples()//デコード
-
-                    if (Math.abs(frame - oldFrame) > 100 || frame < oldFrame) {
-                        TimelineController.wait = true
-                        grabber?.timestamp = now - 1000
-                        TimelineController.wait = false
-                        buf = grabber?.grabSamples()
-                    }
+                        buf = grabber?.grabSamples()//デコード
 
                     audioBuf = (buf?.samples?.get(0) as ShortBuffer)
                     val read = Math.min(requiredSamples - readed, audioBuf?.remaining() ?: (requiredSamples - readed))
