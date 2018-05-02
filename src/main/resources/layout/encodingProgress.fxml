@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Accordion?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.EncodingProgress">
+
+    <VBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <Label>エンコード中...</Label>
+        <ProgressBar fx:id="progressBar" prefWidth="600.0" />
+        <Label fx:id="timeLabel">経過時間 00:00:00</Label>
+        <Accordion prefWidth="600.0" VBox.vgrow="ALWAYS">
+            <panes>
+                <TitledPane animated="false" text="出力情報">
+                    <content>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <HBox prefHeight="100.0" prefWidth="200.0" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <ImageView fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
+                                 <image>
+                                    <Image url="@../img/cit_sp.png" />
+                                 </image>
+                              </ImageView>
+                              <Label text="ファイル名:&#10;パス:&#10;&#10;フォーマット:&#10;&#10;解像度:&#10;映像コーデック:&#10;映像ビットレート:&#10;&#10;音声チャンネル数:&#10;音声レート:&#10;音声コーデック:&#10;音声ビットレート:" textAlignment="RIGHT" HBox.hgrow="ALWAYS" />
+                              <Label text="out.mp4&#10;./&#10;&#10;mp4&#10;&#10;1920x1080&#10;H.264/AVC&#10;10Mbps&#10;&#10;2ch&#10;48000Hz&#10;AAC&#10;192Kbps" />
+                           </children>
+                        </HBox>
+                     </children></AnchorPane>
+                    </content>
+                </TitledPane>
+                <TitledPane animated="false" text="ログ">
+                    <content>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <TextArea fx:id="textArea" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                     </children></AnchorPane>
+                    </content>
+                </TitledPane>
+            </panes>
+        </Accordion>
+    </VBox>
+
+</AnchorPane>

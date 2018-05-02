@@ -112,19 +112,16 @@ class Controller : Initializable {
     }
 
     fun onOutput(actionEvent: ActionEvent) {
-        timelineController.projectRenderer.startEncode(object : ProjectRenderer.EncodingInfoCallback{
-            override fun onProgress(progress: Int, max: Int) {
-                println("$progress / $max")
-            }
+        rootPane.scene.window.opacity = 0.0
+        val stage = Stage()
+        val loader = FXMLLoader(ClassLoader.getSystemResource("layout/encodingProgress.fxml"))
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.scene = Scene(loader.load<Parent>())
+        val controller = loader.getController<EncodingProgress>()
+        controller.init(timelineController.projectRenderer)
+        stage.showAndWait()
+        rootPane.scene.window.opacity = 1.0
 
-            override fun onFinish() {
-                Alert(Alert.AlertType.CONFIRMATION,"エンコード完了", ButtonType.OK).show()
-            }
-
-            override fun onInfo(msg: String) {
-
-            }
-        })
     }
 
     fun onTest(actionEvent: ActionEvent) {

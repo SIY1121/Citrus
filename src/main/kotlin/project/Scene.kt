@@ -4,6 +4,7 @@ import com.jogamp.opengl.GL2
 import objects.AudioSampleProvider
 import objects.Drawable
 import ui.Main
+import java.awt.Frame
 
 class Scene : ArrayList<Layer>(), Drawable, AudioSampleProvider {
 
@@ -22,6 +23,7 @@ class Scene : ArrayList<Layer>(), Drawable, AudioSampleProvider {
                 result[index] = (result[index] + value).toShort()
             }
         }
+        println("$oldAudioFrame to $frame ${result.size}")
         oldAudioFrame = frame
         return result
     }

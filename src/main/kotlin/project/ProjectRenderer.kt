@@ -56,8 +56,12 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         this.frame = frame
         glPanel?.display()
         val samples = project.scene[selectedScene].getSamples(frame)
-        val data = samples.toByteArray()
-        audioLine.write(data, 0, data.size)
+
+        launch{
+            val data = samples.toByteArray()
+            audioLine.write(data, 0, data.size)
+        }
+
         leftAudioLevel = Math.log(samples.filterIndexed { index, _ -> index % 2 == 0 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.average()
                 ?: 0.01) * 20
         rightAudioLevel = Math.log(samples.filterIndexed { index, _ -> index % 2 == 1 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.average()
@@ -73,18 +77,17 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             recorder = FFmpegFrameRecorder(File("out.mp4"), project.width, project.height)
             recorder?.frameRate = project.fps.toDouble()
             recorder?.sampleRate = project.sampleRate
-            recorder?.videoBitrate = 1000_000_000
-            recorder?.videoCodec = avcodec.AV_CODEC_ID_H264
+            recorder?.videoBitrate = 10000000
+            recorder?.videoCodecName = "h264_nvenc"
             recorder?.audioBitrate = 192_000
             recorder?.audioChannels = project.audioChannel
             recorder?.audioCodec = avcodec.AV_CODEC_ID_AAC
             recorder?.start()
 
-            while (frame < endFrame) {
+            while (frame <= endFrame) {
                 glPanel?.display()
 
                 val samples = project.scene[selectedScene].getSamples(frame)
-                println(samples.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.average())
                 val buf = ShortBuffer.allocate(samples.size).put(samples)
                 buf.position(0)
                 recorder?.recordSamples(project.sampleRate, project.audioChannel, buf)
