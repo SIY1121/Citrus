@@ -14,7 +14,7 @@ import javafx.stage.Modality
 import javafx.stage.Stage
 import org.bytedeco.javacpp.avcodec
 import org.bytedeco.javacpp.avformat
-import util.VideoRenderer
+import project.ProjectRenderer
 import java.net.URL
 import java.util.*
 
@@ -112,10 +112,19 @@ class Controller : Initializable {
     }
 
     fun onOutput(actionEvent: ActionEvent) {
+        timelineController.projectRenderer.startEncode(object : ProjectRenderer.EncodingInfoCallback{
+            override fun onProgress(progress: Int, max: Int) {
+                println("$progress / $max")
+            }
 
-        Thread({
-            VideoRenderer.startEncode()
-        }).start()
+            override fun onFinish() {
+                Alert(Alert.AlertType.CONFIRMATION,"エンコード完了", ButtonType.OK).show()
+            }
+
+            override fun onInfo(msg: String) {
+
+            }
+        })
     }
 
     fun onTest(actionEvent: ActionEvent) {
