@@ -4,14 +4,13 @@ import annotation.CObject
 import annotation.CProperty
 import com.jogamp.opengl.GL2
 import properties.CAnimatableDoubleProperty
-import ui.GlCanvas
 
 /**
  * 描画が発生する小向ジェクトの親クラス
  * 座標、拡大率、透明度などをもつ
  */
 @CObject("描画")
-abstract class DrawableObject : CitrusObject(), Drawable {
+abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLayer,defScene), Drawable {
     var selected: Boolean = false
     var enabledSelectedOutline: Boolean = true
 
@@ -29,11 +28,13 @@ abstract class DrawableObject : CitrusObject(), Drawable {
     @CProperty("回転", 5)
     val rotate = CAnimatableDoubleProperty()
 
-    override fun draw(gl: GL2,mode: Drawable.DrawMode) {
-        onDraw(gl,mode)
+    override fun draw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
+        gl.glPushMatrix()
+        onDraw(gl, mode, frame)
+        gl.glPopMatrix()
     }
 
-    open fun onDraw(gl: GL2, mode: Drawable.DrawMode) {
+    open fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
         gl.glTranslated(x.value.toDouble(), y.value.toDouble(), z.value.toDouble())
         gl.glRotated(rotate.value.toDouble(), 0.0, 0.0, 1.0)
         gl.glScaled(scale.value.toDouble(), scale.value.toDouble(), scale.value.toDouble())
@@ -42,11 +43,5 @@ abstract class DrawableObject : CitrusObject(), Drawable {
 
         }
         gl.glBindTexture(GL2.GL_TEXTURE_2D, 0)
-    }
-
-    override fun onFrame() {
-        GlCanvas.gl2.glPushMatrix()
-        onDraw(GlCanvas.gl2, Drawable.DrawMode.Preview)
-        GlCanvas.gl2.glPopMatrix()
     }
 }

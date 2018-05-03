@@ -14,7 +14,7 @@ import javafx.stage.Stage
 import javafx.stage.StageStyle
 import objects.ObjectManager
 import org.bytedeco.javacv.FFmpegFrameGrabber
-import util.Statics
+import project.Project
 
 
 class Main : Application() {
@@ -62,7 +62,7 @@ class Main : Application() {
                 welcomeScreen.initModality(Modality.WINDOW_MODAL)
                 welcomeScreen.showAndWait()
 
-                if(!Statics.project.initialized)System.exit(0)
+                if(!Main.project.initialized)System.exit(0)
 
                 primaryStage.scene = Scene(root, 800.0, 700.0)
                 primaryStage.show()
@@ -72,6 +72,9 @@ class Main : Application() {
     }
 
     companion object {
+
+        var project = Project()
+
         @JvmStatic
         fun main(args: Array<String>) {
             Application.launch(Main::class.java, *args)

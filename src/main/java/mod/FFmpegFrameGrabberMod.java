@@ -528,9 +528,9 @@ public class FFmpegFrameGrabberMod extends FrameGrabber {
                     Iterator var14;
                     Entry e;
                     if (this.video_st != null) {
-                        if (video_par.codec_id() == avcodec.AV_CODEC_ID_H264)
-                            codec = avcodec.avcodec_find_decoder_by_name("h264_cuvid");
-                        else
+//                        if (video_par.codec_id() == avcodec.AV_CODEC_ID_H264)
+//                            codec = avcodec.avcodec_find_decoder_by_name("h264_qsv");
+//                        else
                             codec = avcodec.avcodec_find_decoder(video_par.codec_id());
 
                         if (codec == null) {
@@ -562,6 +562,10 @@ public class FFmpegFrameGrabberMod extends FrameGrabber {
                         if (this.video_c.time_base().num() > 1000 && this.video_c.time_base().den() == 1) {
                             this.video_c.time_base().den(1000);
                         }
+
+                        video_c.thread_count(8);
+                        video_c.thread_type(AVCodecContext.FF_THREAD_FRAME);
+                        video_c.flags(video_c.flags() | AVCodecContext.FF_THREAD_FRAME);
 
                         if ((this.picture = avutil.av_frame_alloc()) == null) {
                             throw new Exception("av_frame_alloc() error: Could not allocate raw picture frame.");

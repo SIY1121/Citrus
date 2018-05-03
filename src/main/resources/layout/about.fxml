@@ -25,7 +25,7 @@
                                         <Image url="@../img/cit_sp.png" />
                                     </image>
                                 </ImageView>
-                                <Label alignment="CENTER" prefHeight="17.0" prefWidth="500.0" text="Citrus  alpha 0.1.0" textAlignment="CENTER">
+                                <Label alignment="CENTER" prefHeight="17.0" prefWidth="500.0" text="Citrus  alpha 0.1.1" textAlignment="CENTER">
                                     <font>
                                         <Font size="24.0" />
                                     </font>
