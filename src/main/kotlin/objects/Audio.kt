@@ -40,7 +40,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     val file = CFileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
 
     @CProperty("音量", 1)
-    val volume = CAnimatableDoubleProperty(0.0, 1.0, 1.0, 0.01)
+    val volume = CAnimatableDoubleProperty(0.0, 2.0, 1.0, 0.01)
 
     @CProperty("開始位置", 2)
     val startPos = CIntegerProperty(min = 0)
@@ -180,7 +180,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                     }
                     oldFrame = frame
 
-                    return result.map { it * 0.97f }.toFloatArray()
+                    return result.map { it * 0.97f * volume.value.toFloat() }.toFloatArray()
                 }
         }
 
@@ -259,11 +259,15 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                 }
 
                 waveFormCanvas.layoutX = uiObject?.timelineController?.offsetX ?: 0.0
+                waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width?:0.0,(uiObject?.width?:1.0)-waveFormCanvas.layoutX)
+
             })
             waveFormCanvas.width = uiObject?.timelineController?.hScrollBar?.width ?: 0.0
             uiObject?.timelineController?.hScrollBar?.widthProperty()?.addListener { _, _, n ->
-                println(n.toDouble())
-                waveFormCanvas.width = n.toDouble()
+                waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width?:0.0,(uiObject?.width?:1.0)-waveFormCanvas.layoutX)
+            }
+            uiObject?.widthProperty()?.addListener { _, _, n ->
+                waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width?:0.0,(uiObject?.width?:1.0)-waveFormCanvas.layoutX)
             }
 
             uiObject?.headerPane?.children?.add(0, waveFormCanvas)

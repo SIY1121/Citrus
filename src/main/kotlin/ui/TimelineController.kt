@@ -383,18 +383,23 @@ class TimelineController : Initializable {
 
         //背景
         g.fill = Color.GRAY
-        g.fillRect(0.0, 0.0, 20.0, canvas.height)
-        g.fillRect(21.0, 0.0, 20.0, canvas.height)
+        g.fillRect(0.0, 0.0, 25.0, canvas.height)
+        g.fillRect(26.0, 0.0, 25.0, canvas.height)
 
         //メーター
         g.fill = LinearGradient(0.0, 0.0, 0.0, canvas.height, false, CycleMethod.NO_CYCLE, Stop(0.0, Color.RED), Stop(canvas.height, Color.YELLOW))
-        g.fillRect(0.0, canvas.height - (levelL / 60.0) * canvas.height, 20.0, (levelL / 60.0) * canvas.height)
-        g.fillRect(21.0, canvas.height - (levelR / 60.0) * canvas.height, 20.0, (levelR / 60.0) * canvas.height)
+        g.fillRect(0.0, canvas.height - (levelL / 60.0) * canvas.height, 25.0, (levelL / 60.0) * canvas.height)
+        g.fillRect(26.0, canvas.height - (levelR / 60.0) * canvas.height, 25.0, (levelR / 60.0) * canvas.height)
         //文字
         g.fill = Color.WHITE
-        g.font = Font.font(8.0)
-        for (i in 0..10) {
-            g.fillText("${i * 6}dB", 41.0, (i / 10.0) * canvas.height + g.font.size)
+        g.stroke = Color.WHITE
+        g.font = Font.font(9.0)
+        for (i in 0..60) {
+            if (i % 6 == 0){
+                g.fillText("-${i}dB", 56.0, (i / 60.0) * canvas.height + g.font.size)
+                g.strokeLine(51.0, (i / 60.0) * canvas.height, 55.0, (i / 60.0) * canvas.height)
+            }
+
         }
 
         if (projectRenderer.leftAudioLevel > leftMaxVol) {
@@ -406,17 +411,21 @@ class TimelineController : Initializable {
             rightMaxVol = projectRenderer.rightAudioLevel
         }
 
-        parentController.volumeLeftLight.isVisible = (leftMaxVol > 1)
-        parentController.volumeRightLight.isVisible = (rightMaxVol > 1)
-
-        if(parentController.volumeLeftLight.isVisible)println(leftMaxVol)
+        parentController.volumeLeftLight.fill =
+                if (leftMaxVol > 1)
+                    LinearGradient(0.0, 0.0, 0.0, 1.0, true, CycleMethod.NO_CYCLE, Stop(0.5, Color.YELLOW), Stop(1.0, Color.YELLOW.darker()))
+                else LinearGradient(0.0, 0.0, 0.0, 1.0, true, CycleMethod.NO_CYCLE, Stop(0.5, Color.DARKGRAY), Stop(1.0, Color.BLACK))
+        parentController.volumeRightLight.fill =
+                if (leftMaxVol > 1)
+                    LinearGradient(0.0, 0.0, 0.0, 1.0, true, CycleMethod.NO_CYCLE, Stop(0.5, Color.YELLOW), Stop(1.0, Color.YELLOW.darker()))
+                else LinearGradient(0.0, 0.0, 0.0, 1.0, true, CycleMethod.NO_CYCLE, Stop(0.5, Color.DARKGRAY), Stop(1.0, Color.BLACK))
 
         //ピークホールド
         g.fill = Color.WHITE
         val maxL = 60 + 20 * Math.log10(leftMaxVol)
         val maxR = 60 + 20 * Math.log10(rightMaxVol)
-        g.fillRect(0.0, canvas.height - (maxL / 60.0) * canvas.height, 20.0, 2.0)
-        g.fillRect(21.0, canvas.height - (maxR / 60.0) * canvas.height, 20.0, 2.0)
+        g.fillRect(0.0, canvas.height - (maxL / 60.0) * canvas.height, 25.0, 2.0)
+        g.fillRect(26.0, canvas.height - (maxR / 60.0) * canvas.height, 25.0, 2.0)
 
         dvCount++
         if (dvCount.toDouble() / projectRenderer.project.fps > 1) {
