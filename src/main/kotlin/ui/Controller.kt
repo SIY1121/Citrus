@@ -12,6 +12,7 @@ import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.*
 import javafx.scene.layout.*
+import javafx.scene.shape.Rectangle
 import javafx.stage.Modality
 import javafx.stage.Stage
 import org.bytedeco.javacpp.avcodec
@@ -38,8 +39,15 @@ class Controller : Initializable {
     lateinit var canvasWrapper : Pane
     @FXML
     lateinit var rightPane : AnchorPane
+
     @FXML
     lateinit var volumeBar: Canvas
+    @FXML
+    lateinit var volumeBarWrapper : Pane
+    @FXML
+    lateinit var volumeLeftLight : Rectangle
+    @FXML
+    lateinit var volumeRightLight : Rectangle
 
 
     lateinit var canvas : GLJPanel
@@ -58,6 +66,10 @@ class Controller : Initializable {
         borderPane.prefHeightProperty().bind(rootPane.heightProperty())
         canvasWrapper.heightProperty().addListener(listener)
         canvasWrapper.widthProperty().addListener(listener)
+
+        volumeBarWrapper.heightProperty().addListener { _, _, n ->
+            volumeBar.height = n.toDouble()
+        }
 
         SplashController.notifyProgress(0.7,"OpenGLを初期化中...")
 

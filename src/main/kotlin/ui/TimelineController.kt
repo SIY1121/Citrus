@@ -75,9 +75,7 @@ class TimelineController : Initializable {
         set(value) {
             field = value
             projectRenderer.glPanel = field.canvas
-            timelineRootPane.heightProperty().addListener { _, _, n ->
-                parentController.volumeBar.height = n.toDouble()
-            }
+
 //            parentController.rootPane.setOnKeyPressed {
 //                when (it.code) {
 //                    KeyCode.SPACE -> {
@@ -399,19 +397,26 @@ class TimelineController : Initializable {
             g.fillText("${i * 6}dB", 41.0, (i / 10.0) * canvas.height + g.font.size)
         }
 
-        if (levelL > leftMaxVol) {
+        if (projectRenderer.leftAudioLevel > leftMaxVol) {
             dvCount = 0
-            leftMaxVol = levelL
+            leftMaxVol = projectRenderer.leftAudioLevel
         }
-        if (levelR > rightMaxVol) {
+        if (projectRenderer.rightAudioLevel > rightMaxVol) {
             dvCount = 0
-            rightMaxVol = levelR
+            rightMaxVol = projectRenderer.rightAudioLevel
         }
+
+        parentController.volumeLeftLight.isVisible = (leftMaxVol > 1)
+        parentController.volumeRightLight.isVisible = (rightMaxVol > 1)
+
+        if(parentController.volumeLeftLight.isVisible)println(leftMaxVol)
 
         //ピークホールド
         g.fill = Color.WHITE
-        g.fillRect(0.0, canvas.height - (leftMaxVol / 60.0) * canvas.height, 20.0, 2.0)
-        g.fillRect(21.0, canvas.height - (rightMaxVol / 60.0) * canvas.height, 20.0, 2.0)
+        val maxL = 60 + 20 * Math.log10(leftMaxVol)
+        val maxR = 60 + 20 * Math.log10(rightMaxVol)
+        g.fillRect(0.0, canvas.height - (maxL / 60.0) * canvas.height, 20.0, 2.0)
+        g.fillRect(21.0, canvas.height - (maxR / 60.0) * canvas.height, 20.0, 2.0)
 
         dvCount++
         if (dvCount.toDouble() / projectRenderer.project.fps > 1) {

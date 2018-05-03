@@ -12,6 +12,8 @@
 <?import ui.VolumeBar?>
 <?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Rectangle?>
 <Pane fx:id="rootPane" prefHeight="500.0" prefWidth="500.0" stylesheets="/layout/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.Controller">
     <BorderPane fx:id="borderPane" prefHeight="500.0" prefWidth="500.0">
         <top>
@@ -42,9 +44,15 @@
                 </SplitPane>
                 <AnchorPane>
                     <fx:include fx:id="timeline" source="timeline.fxml" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="60" AnchorPane.topAnchor="0" />
-                    <HBox prefWidth="60.0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
-                        <Canvas fx:id="volumeBar" width="60.0" style="-fx-background-color: gray;" />
-                    </HBox>
+                    <AnchorPane prefWidth="60.0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
+                        <HBox prefHeight="8" AnchorPane.topAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="20">
+                            <Rectangle fx:id="volumeLeftLight" fill="red" width="20" height="8"/>
+                            <Rectangle fx:id="volumeRightLight" fill="red" width="20" height="8"/>
+                        </HBox>
+                        <Pane fx:id="volumeBarWrapper" AnchorPane.topAnchor="8" AnchorPane.rightAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0">
+                            <Canvas fx:id="volumeBar" width="60.0" style="-fx-background-color: gray;" />
+                        </Pane>
+                    </AnchorPane>
                 </AnchorPane>
             </SplitPane>
         </center>

@@ -12,7 +12,7 @@ class Layer : ArrayList<CitrusObject>(), Drawable, AudioSampleProvider {
     var currentObject: CitrusObject? = null
 
 
-    override fun getSamples(frame: Int): ShortArray {
+    override fun getSamples(frame: Int): FloatArray {
         if (currentObject?.isActive(frame) == true) {
             val a = currentObject
             if (a is AudioSampleProvider)
@@ -23,7 +23,7 @@ class Layer : ArrayList<CitrusObject>(), Drawable, AudioSampleProvider {
         } else {
             currentObject = firstOrNull { it.isActive(frame) }
         }
-        return ShortArray(0)
+        return FloatArray(0)
     }
 
     override fun draw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {

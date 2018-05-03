@@ -14,6 +14,7 @@ import javafx.stage.FileChooser
 import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
+import org.bytedeco.javacv.FrameGrabber
 import properties.CAnimatableDoubleProperty
 import properties.CFileProperty
 import properties.CIntegerProperty
@@ -24,6 +25,7 @@ import ui.TimelineController
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
@@ -92,6 +94,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         launch {
             grabber = FFmpegFrameGrabber(file)
             grabber?.sampleRate = Main.project.sampleRate
+            grabber?.sampleMode = FrameGrabber.SampleMode.FLOAT
             grabber?.audioChannels = Main.project.audioChannel
             grabber?.start()
             if (grabber?.audioCodec == 0) {
@@ -142,9 +145,9 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
 
     }
 
-    var audioBuf: ShortBuffer? = null
+    var audioBuf: FloatBuffer? = null
 
-    override fun getSamples(frame: Int): ShortArray {
+    override fun getSamples(frame: Int): FloatArray {
         if (isGrabberStarted) {
             if (frame == 0)
                 grabber?.timestamp = 0L
@@ -153,7 +156,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                     val now = ((frame + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
                     //
                     val requiredSamples = if (frame - oldFrame in 1..99) (frame - oldFrame) * samplesPerFrame else samplesPerFrame
-                    val result = ShortArray(requiredSamples)
+                    val result = FloatArray(requiredSamples)
                     var readed = 0
 
                     if (Math.abs(frame - oldFrame) >= 100 || frame < oldFrame) {
@@ -168,7 +171,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                         if (audioBuf?.remaining() == 0 || audioBuf == null)//バッファが空orNullだったら
                             buf = grabber?.grabSamples()//デコード
 
-                        audioBuf = (buf?.samples?.get(0) as ShortBuffer)
+                        audioBuf = (buf?.samples?.get(0) as FloatBuffer)
                         val read = Math.min(requiredSamples - readed, audioBuf?.remaining()
                                 ?: (requiredSamples - readed))
                         audioBuf?.get(result, readed, read)
@@ -176,11 +179,12 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                         readed += read
                     }
                     oldFrame = frame
-                    return result
+
+                    return result.map { it * 0.97f }.toFloatArray()
                 }
         }
 
-        return ShortArray(0)
+        return FloatArray(0)
     }
 
     //ShortArrayをリトルエンディアンでbyte配列に変換
@@ -203,22 +207,21 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         //1キャンバス中で描画したブロックの数
         var blockCount = 0
         //1ブロック分のサンプルを保持しておく配列
-        val shortArray = ShortArray(((grabber?.sampleRate ?: 44100) * (grabber?.audioChannels
+        val shortArray = FloatArray(((grabber?.sampleRate ?: 44100) * (grabber?.audioChannels
                 ?: 2) * resolution).toInt())
         //1ブロック分を読み取るまでのカウンタ
         var read = 0
-        //描画を終えたキャンバスの数
-        var canvasCount = 0
         while (buffer != null) {
             //デコード
-            val s = (buffer.samples?.get(0) as ShortBuffer)
+            val s = (buffer.samples?.get(0) as FloatBuffer)
 
             //デコードしたサンプルを全て読み終わるまでループ
             while (s.remaining() > 0) {
-                //1ブロック分を読み終わったら、描画
+                //1ブロック分を読み終わったら、データを格納
                 if (shortArray.size - read == 0) {
-                    val maxLevel = ((shortArray.map { Math.abs(it.toDouble() / Short.MAX_VALUE) }.max() ?: 0.0)* Byte.MAX_VALUE).toByte()
-                    val averageLevel = shortArray.map { Math.abs(it.toInt()) }.average() / Short.MAX_VALUE.toDouble()
+                    val maxLevel = Math.min(((shortArray.map { Math.abs(it.toDouble()) }.max()
+                            ?: 0.0) * Byte.MAX_VALUE), Byte.MAX_VALUE.toDouble()).toByte()
+                    //val averageLevel = shortArray.map { Math.abs(it.toInt()) }.average() / Short.MAX_VALUE.toDouble()
                     waveLevelData[blockCount] = maxLevel
                     read = 0
                     blockCount++
