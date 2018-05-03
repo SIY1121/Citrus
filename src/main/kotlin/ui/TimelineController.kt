@@ -13,6 +13,9 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
+import javafx.scene.paint.CycleMethod
+import javafx.scene.paint.LinearGradient
+import javafx.scene.paint.Stop
 import javafx.scene.shape.Line
 import javafx.scene.shape.Polygon
 import javafx.scene.shape.Rectangle
@@ -63,8 +66,8 @@ class TimelineController : Initializable {
             if (field != value) {
                 field = value
                 projectRenderer.renderPreview(field)
-                parentController.leftVolumeBar.value = Math.max(projectRenderer.leftAudioLevel + 100, 0.0)
-                parentController.rightVolumeBar.value = Math.max(projectRenderer.rightAudioLevel + 100, 0.0)
+                Platform.runLater { drawVolumeBar() }
+
             }
         }
 
@@ -72,6 +75,9 @@ class TimelineController : Initializable {
         set(value) {
             field = value
             projectRenderer.glPanel = field.canvas
+            timelineRootPane.heightProperty().addListener { _, _, n ->
+                parentController.volumeBar.height = n.toDouble()
+            }
 //            parentController.rootPane.setOnKeyPressed {
 //                when (it.code) {
 //                    KeyCode.SPACE -> {
@@ -364,6 +370,30 @@ class TimelineController : Initializable {
             }
         }
     }
+
+    private fun drawVolumeBar() {
+        val canvas = parentController.volumeBar
+
+        val levelL = 60 + 20 * Math.log10(projectRenderer.leftAudioLevel)
+        val levelR = 60 + 20 * Math.log10(projectRenderer.rightAudioLevel)
+        val g = canvas.graphicsContext2D
+        g.clearRect(0.0, 0.0, canvas.width, canvas.height)
+
+        g.fill = Color.GRAY
+        g.fillRect(0.0, 0.0, 20.0, canvas.height)
+        g.fillRect(21.0, 0.0, 20.0, canvas.height)
+
+        g.fill = LinearGradient(0.0, 0.0, 0.0, canvas.height, false, CycleMethod.NO_CYCLE, Stop(0.0, Color.RED), Stop(canvas.height, Color.YELLOW))
+        g.fillRect(0.0, canvas.height - (levelL / 60.0) * canvas.height, 20.0, (levelL / 60.0) * canvas.height)
+        g.fillRect(21.0, canvas.height - (levelR / 60.0) * canvas.height, 20.0, (levelR / 60.0) * canvas.height)
+
+        g.fill = Color.WHITE
+        g.font = Font.font(8.0)
+        for (i in 0..10) {
+            g.fillText("${i * 6}dB", 41.0, (i / 10.0) * canvas.height + g.font.size)
+        }
+    }
+
 
     fun layerScrollPaneOnMousePressed(mouseEvent: MouseEvent) {
         if (mouseEvent.button != MouseButton.PRIMARY) return

@@ -9,6 +9,7 @@ import javafx.fxml.FXMLLoader
 import javafx.fxml.Initializable
 import javafx.scene.Parent
 import javafx.scene.Scene
+import javafx.scene.canvas.Canvas
 import javafx.scene.control.*
 import javafx.scene.layout.*
 import javafx.stage.Modality
@@ -38,9 +39,7 @@ class Controller : Initializable {
     @FXML
     lateinit var rightPane : AnchorPane
     @FXML
-    lateinit var leftVolumeBar: VolumeBar
-    @FXML
-    lateinit var rightVolumeBar: VolumeBar
+    lateinit var volumeBar: Canvas
 
 
     lateinit var canvas : GLJPanel

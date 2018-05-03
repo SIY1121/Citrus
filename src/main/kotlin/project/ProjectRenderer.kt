@@ -67,10 +67,10 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             audioLine.write(data, 0, data.size)
         }
 
-        leftAudioLevel = Math.log(samples.filterIndexed { index, _ -> index % 2 == 0 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.average()
-                ?: 0.01) * 20
-        rightAudioLevel = Math.log(samples.filterIndexed { index, _ -> index % 2 == 1 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.average()
-                ?: 0.01) * 20
+        leftAudioLevel = (samples.filterIndexed { index, _ -> index % 2 == 0 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.max()
+                ?: 0.0)
+        rightAudioLevel = (samples.filterIndexed { index, _ -> index % 2 == 1 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.max()
+                ?: 0.0)
     }
 
     fun startEncode(infoCallcack: EncodingInfoCallback) {

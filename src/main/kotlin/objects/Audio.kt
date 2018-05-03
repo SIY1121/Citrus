@@ -54,14 +54,11 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     private var audioLength = 0
 
     /**
-     * 波形キャンバス格納用
-     */
-    private val hBox = HBox()
-
-    /**
      * 波形レンダリング用キャンバス
      */
-    private var waveFormCanvases: Array<Canvas> = Array(1, { _ -> Canvas() })
+    private var waveFormCanvas = Canvas()
+
+    private var waveLevelData = ShortArray(0)
 
     /**
      * サンプリングの間隔(秒)
@@ -109,7 +106,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             samplesPerFrame = (grabber?.sampleRate ?: Main.project.sampleRate) * (grabber?.audioChannels
                     ?: 2) / Main.project.fps
             //波形描画
-            //renderWaveForm()
+            renderWaveForm()
 
             audioLength = ((grabber?.lengthInFrames ?: 1) * (Main.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
@@ -142,8 +139,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     }
 
     override fun onScaleUpdate() {
-        hBox.scaleX = (audioLength) * TimelineController.pixelPerFrame / hBox.width
-        hBox.translateX = -(1 - hBox.scaleX) * hBox.width / 2.0
+
     }
 
     var audioBuf: ShortBuffer? = null
@@ -198,11 +194,9 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     }
 
     private fun renderWaveForm() {
-        //必要数のキャンバスを作成
-        waveFormCanvases = Array(((grabber?.lengthInTime
-                ?: 0) / 1000.0 / 1000.0 / resolution / canvasSize.toDouble()).toInt() + 1, { _ -> Canvas(0.0, 30.0) })
-        waveFormCanvases[0] = Canvas(canvasSize.toDouble(), 30.0)
-        var g = waveFormCanvases[0].graphicsContext2D
+        waveFormCanvas.height = 30.0
+        waveLevelData = ShortArray(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution).toInt())
+
 
         var buffer = grabber?.grabSamples()
 
@@ -223,23 +217,11 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             while (s.remaining() > 0) {
                 //1ブロック分を読み終わったら、描画
                 if (shortArray.size - read == 0) {
-                    val maxLevel = (shortArray.map { Math.abs(it.toInt()) }.max() ?: 0) / Short.MAX_VALUE.toDouble()
+                    val maxLevel = (shortArray.map { Math.abs(it.toInt()) }.max() ?: 0).toShort()
                     val averageLevel = shortArray.map { Math.abs(it.toInt()) }.average() / Short.MAX_VALUE.toDouble()
-                    g.fill = Color.WHITE
-                    g.fillRect(blockCount.toDouble(), (1 - maxLevel) * g.canvas.height, 1.0, maxLevel * g.canvas.height)
-                    g.fill = Color.LIGHTGRAY
-                    g.fillRect(blockCount.toDouble(), (1 - averageLevel) * g.canvas.height, 1.0, averageLevel * g.canvas.height)
+                    waveLevelData[blockCount] = maxLevel
                     read = 0
                     blockCount++
-
-                    //キャンバスを全て埋め終わった場合
-                    if (blockCount == canvasSize) {
-                        waveFormCanvases[canvasCount].width = canvasSize.toDouble()
-                        canvasCount++
-                        blockCount = 0
-                        waveFormCanvases[canvasCount] = Canvas(canvasSize.toDouble(), 30.0)
-                        g = waveFormCanvases[canvasCount].graphicsContext2D
-                    }
                 }
 
                 val old = s.position()
@@ -256,18 +238,32 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             buffer = grabber?.grabSamples()
         }
 
-        //最後のキャンバスは、描画されていない部分が余るので、サイズ調整
-        waveFormCanvases[canvasCount].width = blockCount.toDouble()
-
-
         Platform.runLater {
-            //クリップ用のrectの幅をuiObjectにバインド
-            uiObject?.widthProperty()?.addListener({ _, _, n ->
-                rect.width = n.toDouble() / hBox.scaleX
+            uiObject?.timelineController?.hScrollBar?.valueProperty()?.addListener({ _, _, _ ->
+                val startSec = ((uiObject?.timelineController?.offsetX
+                        ?: 0.0) / TimelineController.pixelPerFrame) / Main.project.fps
+                val pixelPerData = (Main.project.fps * TimelineController.pixelPerFrame) * resolution
+                var x = 0.0
+                var i = 0
+                val g = waveFormCanvas.graphicsContext2D
+                g.clearRect(0.0, 0.0, waveFormCanvas.width, waveFormCanvas.height)
+                g.fill = Color.WHITE
+                while (x < waveFormCanvas.width && (startSec / resolution).toInt() + i < waveLevelData.size) {
+                    val level = waveLevelData[(startSec / resolution).toInt() + i] / Short.MAX_VALUE.toDouble() * waveFormCanvas.height
+                    g.fillRect(x, waveFormCanvas.height - level, pixelPerData, level)
+                    x += pixelPerData
+                    i++
+                }
+
+                waveFormCanvas.layoutX = uiObject?.timelineController?.offsetX ?: 0.0
             })
-            uiObject?.headerPane?.children?.add(0, hBox)
-            hBox.clip = rect
-            hBox.children.addAll(waveFormCanvases)
+            waveFormCanvas.width = uiObject?.timelineController?.hScrollBar?.width ?: 0.0
+            uiObject?.timelineController?.hScrollBar?.widthProperty()?.addListener { _, _, n ->
+                println(n.toDouble())
+                waveFormCanvas.width = n.toDouble()
+            }
+
+            uiObject?.headerPane?.children?.add(0, waveFormCanvas)
         }
         grabber?.timestamp = 0L
 
