@@ -1,5 +1,6 @@
 package ui
 
+import com.jogamp.opengl.awt.GLJPanel
 import javafx.beans.InvalidationListener
 import javafx.embed.swing.SwingNode
 import javafx.event.ActionEvent
@@ -14,8 +15,7 @@ import javafx.stage.Modality
 import javafx.stage.Stage
 import org.bytedeco.javacpp.avcodec
 import org.bytedeco.javacpp.avformat
-import util.Statics
-import util.VideoRenderer
+import project.ProjectRenderer
 import java.net.URL
 import java.util.*
 
@@ -37,9 +37,13 @@ class Controller : Initializable {
     lateinit var canvasWrapper : Pane
     @FXML
     lateinit var rightPane : AnchorPane
+    @FXML
+    lateinit var leftVolumeBar: VolumeBar
+    @FXML
+    lateinit var rightVolumeBar: VolumeBar
 
 
-    lateinit var canvas : GlCanvas
+    lateinit var canvas : GLJPanel
 
     lateinit var welcomeScreen : Stage
 
@@ -47,9 +51,9 @@ class Controller : Initializable {
 
     override fun initialize(location: URL?, resources: ResourceBundle?) {
         println("initialize")
-        canvas = GlCanvas()
+        canvas = GLJPanel()
+        glCanvas.content = canvas
         timelineController.parentController = this
-        timelineController.glCanvas = canvas
 
         borderPane.prefWidthProperty().bind(rootPane.widthProperty())
         borderPane.prefHeightProperty().bind(rootPane.heightProperty())
@@ -58,7 +62,6 @@ class Controller : Initializable {
 
         SplashController.notifyProgress(0.7,"OpenGLを初期化中...")
 
-        glCanvas.content = canvas
     }
 
     fun showWelcomeScreen(){
@@ -69,7 +72,7 @@ class Controller : Initializable {
     }
 
     val listener = InvalidationListener{
-        val w = canvasWrapper.width - Statics.project.width.toDouble()/Statics.project.height*canvasWrapper.height
+        val w = canvasWrapper.width - Main.project.width.toDouble()/Main.project.height*canvasWrapper.height
         AnchorPane.setLeftAnchor(glCanvas,w/2.0)
         AnchorPane.setRightAnchor(glCanvas,w/2.0)
     }
@@ -110,10 +113,16 @@ class Controller : Initializable {
     }
 
     fun onOutput(actionEvent: ActionEvent) {
+        rootPane.scene.window.opacity = 0.0
+        val stage = Stage()
+        val loader = FXMLLoader(ClassLoader.getSystemResource("layout/encodingProgress.fxml"))
+        stage.initModality(Modality.APPLICATION_MODAL)
+        stage.scene = Scene(loader.load<Parent>())
+        val controller = loader.getController<EncodingProgress>()
+        controller.init(timelineController.projectRenderer)
+        stage.showAndWait()
+        rootPane.scene.window.opacity = 1.0
 
-        Thread({
-            VideoRenderer.startEncode()
-        }).start()
     }
 
     fun onTest(actionEvent: ActionEvent) {

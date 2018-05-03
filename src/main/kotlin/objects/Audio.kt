@@ -17,10 +17,10 @@ import org.bytedeco.javacv.Frame
 import properties.CAnimatableDoubleProperty
 import properties.CFileProperty
 import properties.CIntegerProperty
+import ui.Main
 import ui.WindowFactory
 import ui.TimeLineObject
 import ui.TimelineController
-import util.Statics
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -32,7 +32,7 @@ import javax.sound.sampled.SourceDataLine
 
 @CObject("音声", "388E3CFF", "img/ic_music.png")
 @CDroppable(["ac3", "aac", "adts", "aif", "aiff", "afc", "aifc", "amr", "au", "bit", "caf", "dts", "eac3", "flac", "g722", "tco", "rco", "gsm", "lbc", "latm", "loas", "mka", "mp2", "m2a", "mpa", "mp3", "oga", "oma", "opus", "spx", "tta", "voc", "wav", "wv"])
-class Audio : CitrusObject() {
+class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), AudioSampleProvider {
 
     @CProperty("ファイル", 0)
     val file = CFileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
@@ -40,7 +40,7 @@ class Audio : CitrusObject() {
     @CProperty("音量", 1)
     val volume = CAnimatableDoubleProperty(0.0, 1.0, 1.0, 0.01)
 
-    @CProperty("開始位置",2)
+    @CProperty("開始位置", 2)
     val startPos = CIntegerProperty(min = 0)
 
     private var grabber: FFmpegFrameGrabber? = null
@@ -48,7 +48,7 @@ class Audio : CitrusObject() {
 
     private var audioLine: SourceDataLine? = null
 
-    private var oldFrame = -100
+    private var oldFrame = 0
     private var buf: Frame? = null
 
     private var audioLength = 0
@@ -78,8 +78,10 @@ class Audio : CitrusObject() {
      */
     private val rect = Rectangle(100.0, 30.0)
 
+    private var samplesPerFrame = 0
+
     init {
-        file.valueProperty.addListener { _,_,n->onFileLoad(n.toString()) }
+        file.valueProperty.addListener { _, _, n -> onFileLoad(n.toString()) }
         displayName = "[音声]"
     }
 
@@ -92,8 +94,10 @@ class Audio : CitrusObject() {
         dialog.show()
         launch {
             grabber = FFmpegFrameGrabber(file)
+            grabber?.sampleRate = Main.project.sampleRate
+            grabber?.audioChannels = Main.project.audioChannel
             grabber?.start()
-            if (grabber?.videoCodec == 0) {
+            if (grabber?.audioCodec == 0) {
                 Platform.runLater {
                     dialog.close()
                     val alert = Alert(Alert.AlertType.ERROR, "音声コーデックを識別できませんでした", ButtonType.CLOSE)
@@ -102,10 +106,12 @@ class Audio : CitrusObject() {
                 }
                 return@launch
             }
+            samplesPerFrame = (grabber?.sampleRate ?: Main.project.sampleRate) * (grabber?.audioChannels
+                    ?: 2) / Main.project.fps
             //波形描画
-            renderWaveForm()
+            //renderWaveForm()
 
-            audioLength = ((grabber?.lengthInFrames ?: 1) * (Statics.project.fps / (grabber?.frameRate
+            audioLength = ((grabber?.lengthInFrames ?: 1) * (Main.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
             startPos.max = audioLength
             end = start + audioLength
@@ -140,32 +146,45 @@ class Audio : CitrusObject() {
         hBox.translateX = -(1 - hBox.scaleX) * hBox.width / 2.0
     }
 
-    override fun onFrame() {
-        //ファイルの読み込みが完了していた場合
-        if (isGrabberStarted) {
-            if (oldFrame != frame) {
-                //再生時の遅延を考慮して5フレーム分先読み
-                val now = ((frame + 5 + startPos.value.toInt()) * (1.0 / Statics.project.fps) * 1000 * 1000).toLong()
-                //30フレーム以上のスキップでシーク
-                if (Math.abs(frame - oldFrame) > 30) {
-                    TimelineController.wait = true
-                    grabber?.timestamp = now - 1000
-                    TimelineController.wait = false
-                    buf = grabber?.grabSamples()
-                }
-                //理想の時間まで再生
-                while (grabber?.timestamp ?: 0 <= now && buf != null) {
-                    if (buf?.samples != null) {
-                        val s = (buf?.samples?.get(0) as ShortBuffer)
-                        val arr = s.toByteArray()
-                        audioLine?.write(arr, 0, arr.size)
-                    }
-                    buf = grabber?.grabSamples()
-                }
+    var audioBuf: ShortBuffer? = null
 
-            }
-            oldFrame = frame
+    override fun getSamples(frame: Int): ShortArray {
+        if (isGrabberStarted) {
+            if (frame == 0)
+                grabber?.timestamp = 0L
+            else
+                if (oldFrame != frame) {
+                    val now = ((frame + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
+                    //
+                    val requiredSamples = if (frame - oldFrame in 1..99) (frame - oldFrame) * samplesPerFrame else samplesPerFrame
+                    val result = ShortArray(requiredSamples)
+                    var readed = 0
+
+                    if (Math.abs(frame - oldFrame) >= 100 || frame < oldFrame) {
+                        TimelineController.wait = true
+                        grabber?.timestamp = now - (1.0 / Main.project.fps * 1000 * 1000).toLong()
+                        TimelineController.wait = false
+                        buf = grabber?.grabSamples()
+                    }
+
+                    while (readed < requiredSamples) {
+
+                        if (audioBuf?.remaining() == 0 || audioBuf == null)//バッファが空orNullだったら
+                            buf = grabber?.grabSamples()//デコード
+
+                        audioBuf = (buf?.samples?.get(0) as ShortBuffer)
+                        val read = Math.min(requiredSamples - readed, audioBuf?.remaining()
+                                ?: (requiredSamples - readed))
+                        audioBuf?.get(result, readed, read)
+                        //println("read $readed <- $read")
+                        readed += read
+                    }
+                    oldFrame = frame
+                    return result
+                }
         }
+
+        return ShortArray(0)
     }
 
     //ShortArrayをリトルエンディアンでbyte配列に変換
@@ -180,7 +199,8 @@ class Audio : CitrusObject() {
 
     private fun renderWaveForm() {
         //必要数のキャンバスを作成
-        waveFormCanvases = Array(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution / canvasSize.toDouble()).toInt() + 1, { _ -> Canvas(0.0, 30.0) })
+        waveFormCanvases = Array(((grabber?.lengthInTime
+                ?: 0) / 1000.0 / 1000.0 / resolution / canvasSize.toDouble()).toInt() + 1, { _ -> Canvas(0.0, 30.0) })
         waveFormCanvases[0] = Canvas(canvasSize.toDouble(), 30.0)
         var g = waveFormCanvases[0].graphicsContext2D
 
@@ -189,7 +209,8 @@ class Audio : CitrusObject() {
         //1キャンバス中で描画したブロックの数
         var blockCount = 0
         //1ブロック分のサンプルを保持しておく配列
-        val shortArray = ShortArray(((grabber?.sampleRate ?: 44100) * (grabber?.audioChannels ?: 2) * resolution).toInt())
+        val shortArray = ShortArray(((grabber?.sampleRate ?: 44100) * (grabber?.audioChannels
+                ?: 2) * resolution).toInt())
         //1ブロック分を読み取るまでのカウンタ
         var read = 0
         //描画を終えたキャンバスの数
@@ -248,7 +269,7 @@ class Audio : CitrusObject() {
             hBox.clip = rect
             hBox.children.addAll(waveFormCanvases)
         }
-
+        grabber?.timestamp = 0L
 
     }
 }

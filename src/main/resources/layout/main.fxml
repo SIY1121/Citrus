@@ -1,42 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.embed.swing.SwingNode?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<Pane fx:id="rootPane" stylesheets="/layout/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.Controller">
-    <BorderPane fx:id="borderPane">
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.Pane?>
+
+<?import ui.VolumeBar?>
+<Pane fx:id="rootPane" prefHeight="500.0" prefWidth="500.0" stylesheets="/layout/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.Controller">
+    <BorderPane fx:id="borderPane" prefHeight="500.0" prefWidth="500.0">
         <top>
             <MenuBar fx:id="menuBar">
                 <Menu text="ファイル">
                     <MenuItem text="開く" />
-                    <MenuItem text="出力"  onAction="#onOutput"/>
+                    <MenuItem onAction="#onOutput" text="出力" />
                 </Menu>
                 <Menu text="編集" />
                 <Menu text="ヘルプ">
-                    <MenuItem onAction="#onCodecInfo" text="コーデック情報"/>
+                    <MenuItem onAction="#onCodecInfo" text="コーデック情報" />
                     <MenuItem onAction="#onTest" text="テスト" />
                     <MenuItem onAction="#onVersionInfo" text="バージョン情報" />
                 </Menu>
             </MenuBar>
         </top>
         <center>
-            <SplitPane dividerPositions="0.8">
+            <SplitPane fx:id="splitPane" dividerPositions="0.59765625" orientation="VERTICAL">
+                <SplitPane dividerPositions="0.8">
 
-                <SplitPane fx:id="splitPane" dividerPositions="0.59765625" orientation="VERTICAL">
+
                     <AnchorPane fx:id="canvasWrapper">
                         <SwingNode fx:id="glCanvas" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" />
                     </AnchorPane>
-                    <fx:include fx:id="timeline" source="timeline.fxml" />
-                </SplitPane>
 
-                <AnchorPane fx:id="rightPane" minWidth="150" />
+
+                    <AnchorPane fx:id="rightPane" minWidth="150" />
+                </SplitPane>
+                <AnchorPane>
+                    <fx:include fx:id="timeline" source="timeline.fxml" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="60" AnchorPane.topAnchor="0" />
+                    <AnchorPane prefWidth="60.0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
+                        <VolumeBar fx:id="leftVolumeBar" prefWidth="28" style="-fx-background-color: gray;" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0" value="50.0" />
+                        <VolumeBar fx:id="rightVolumeBar" prefWidth="28" style="-fx-background-color: gray;" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" value="20.0"/>
+                    </AnchorPane>
+                </AnchorPane>
             </SplitPane>
         </center>
-      <bottom>
-         
-      </bottom>
-      <bottom>
-      </bottom>
+        <bottom>
+
+        </bottom>
+        <bottom>
+        </bottom>
 
     </BorderPane>
 </Pane>

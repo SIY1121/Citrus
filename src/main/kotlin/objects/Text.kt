@@ -12,14 +12,14 @@ import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import javafx.scene.text.Font
 import javafx.scene.text.TextAlignment
+import project.ProjectRenderer
 import properties.*
-import ui.GlCanvas
 import java.awt.GraphicsEnvironment
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 
 @CObject("テキスト", "1976D2FF", "img/ic_text.png")
-class Text : DrawableObject() {
+class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
     override val id = "citrus/text"
     override val name = "テキスト"
 
@@ -63,7 +63,7 @@ class Text : DrawableObject() {
         text.valueProperty.addListener { _, _, _ -> UpdateTexture() }
 
         displayName = "[テキスト]"
-        GlCanvas.instance.invoke(true, {
+        ProjectRenderer.invoke(true, {
             val b = IntBuffer.allocate(1)
             it.gl.glGenTextures(1, b)
             textureID = b.get()
@@ -110,7 +110,7 @@ class Text : DrawableObject() {
 
         w.pixelReader.getPixels(0, 0, w.width.toInt(), w.height.toInt(), PixelFormat.getByteBgraInstance(), buf, t.boundsInLocal.width.toInt() * 4)
 
-        GlCanvas.instance.invoke(true, {
+        ProjectRenderer.invoke(true, {
             it.gl.glBindTexture(GL.GL_TEXTURE_2D, textureID)
             it.gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, t.boundsInLocal.width.toInt(), t.boundsInLocal.height.toInt()
                     , 0, GL.GL_BGRA, GL.GL_UNSIGNED_BYTE, buf)
@@ -120,8 +120,8 @@ class Text : DrawableObject() {
         displayName = "[テキスト] ${text.value.replace("\n", " ")}"
     }
 
-    override fun onDraw(gl: GL2, mode: Drawable.DrawMode) {
-        super.onDraw(gl, mode)
+    override fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
+        super.onDraw(gl, mode, frame)
 
 
 

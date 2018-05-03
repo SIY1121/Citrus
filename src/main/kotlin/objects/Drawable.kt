@@ -7,5 +7,5 @@ interface Drawable {
         Preview, Final
     }
 
-    fun draw(gl: GL2, mode: DrawMode)
+    fun draw(gl: GL2, mode: DrawMode,frame : Int)
 }

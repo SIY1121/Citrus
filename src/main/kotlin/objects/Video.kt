@@ -10,24 +10,22 @@ import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
 import javafx.stage.FileChooser
 import kotlinx.coroutines.experimental.launch
+import mod.FFmpegFrameGrabberMod
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
-import ui.GlCanvas
-import util.Statics
+import project.ProjectRenderer
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import properties.CFileProperty
 import properties.CIntegerProperty
-import ui.WindowFactory
-import ui.TimeLineObject
-import ui.TimelineController
+import ui.*
 import java.io.*
 import java.nio.ShortBuffer
 
 
 @CObject("動画", "F57C00", "img/ic_movie.png")
 @CDroppable(["asf", "wmv", "wma", "asf", "wmv", "wma", "avi", "flv", "h261", "h263", "m4v", "m4a", "ismv", "isma", "mkv", "mjpg", "mjpeg", "mp4", "mpg", "mpeg", "mpg", "mpeg", "m1v", "dvd", "vob", "vob", "ts", "m2t", "m2ts", "mts", "nut", "ogv", "webm", "chk"])
-class Video : DrawableObject() {
+class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
 
     override val id = "citrus/video"
     override val name = "動画"
@@ -66,7 +64,6 @@ class Video : DrawableObject() {
         launch {
             //デコーダ準備
             grabber = FFmpegFrameGrabber(file)
-            grabber?.timestamp
             grabber?.start()
             if (grabber?.videoCodec == 0) {
                 Platform.runLater {
@@ -78,12 +75,12 @@ class Video : DrawableObject() {
                 return@launch
             }
 
-            videoLength = ((grabber?.lengthInFrames ?: 1) * (Statics.project.fps / (grabber?.frameRate
+            videoLength = ((grabber?.lengthInFrames ?: 1) * (Main.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
             startPos.max = videoLength
             end = start + videoLength
             //テクスチャ準備
-            GlCanvas.instance.invoke(true, {
+            ProjectRenderer.invoke(true, {
                 if (textureID != 0) {
                     val b = IntBuffer.allocate(1)
                     b.put(textureID)
@@ -129,22 +126,24 @@ class Video : DrawableObject() {
         uiObject?.onScaleChanged()
     }
 
-    override fun onDraw(gl: GL2, mode: Drawable.DrawMode) {
-        super.onDraw(gl, mode)
+    override fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
+        super.onDraw(gl, mode, frame)
 
         if (isGrabberStarted) {
             gl.glBindTexture(GL.GL_TEXTURE_2D, textureID)
 
             //フレームが変わった場合にのみ処理
             if (oldFrame != frame) {
-                val now = ((frame + startPos.value.toInt()) * (1.0 / Statics.project.fps) * 1000 * 1000).toLong()
+                val now = ((frame + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
 
                 //移動距離が30フレーム以上でシーク処理を実行
-                if (Math.abs(frame - oldFrame) > 30 || frame < oldFrame) {
+                if (Math.abs(frame - oldFrame) > 100 || frame < oldFrame) {
                     TimelineController.wait = true
                     grabber?.timestamp = Math.max(now - 10000, 0)
+                    //buf = grabber?.fastSeek(now)
                     TimelineController.wait = false
-                    buf = grabber?.grabFrame()
+                    buf = grabber?.grabImage()
+                    println("video $file seek $oldFrame to $frame")
                 }
                 //buf = null
                 //画像フレームを取得できており、タイムスタンプが理想値より上回るまでループ
@@ -179,4 +178,26 @@ class Video : DrawableObject() {
         return byteBuffer.array()
     }
 
+    fun FFmpegFrameGrabber.fastSeek(timestamp : Long):Frame?{
+
+        var beforeTimestamp = 0L
+        while(this.timestamp < timestamp - 1000*1000*10){
+            beforeTimestamp = this.timestamp
+            grabKeyFrame()
+            println("key")
+        }
+
+        if(this.timestamp > timestamp)
+            this.timestamp = beforeTimestamp
+
+
+        var frame : Frame? = null
+        while (this.timestamp < timestamp)
+        {
+               frame = grabImage()
+            println("f")
+        }
+
+        return frame
+    }
 }
