@@ -13,6 +13,7 @@ import kotlinx.coroutines.experimental.launch
 import mod.FFmpegFrameGrabberMod
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
+import project.ProjectRenderer
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import properties.CFileProperty
@@ -79,7 +80,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
             startPos.max = videoLength
             end = start + videoLength
             //テクスチャ準備
-            GlCanvas.instance.invoke(true, {
+            ProjectRenderer.invoke(true, {
                 if (textureID != 0) {
                     val b = IntBuffer.allocate(1)
                     b.put(textureID)

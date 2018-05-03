@@ -23,7 +23,6 @@ class Scene : ArrayList<Layer>(), Drawable, AudioSampleProvider {
                 result[index] = (result[index] + value).toShort()
             }
         }
-        println("$oldAudioFrame to $frame ${result.size}")
         oldAudioFrame = frame
         return result
     }

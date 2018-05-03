@@ -2,9 +2,11 @@ package ui
 
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.scene.layout.Pane
+import javafx.scene.paint.Color
+import javafx.scene.shape.Rectangle
 
 class VolumeBar : Pane() {
-    private val bar = Pane()
+    private val bar = Rectangle()
 
     val valueProperty = SimpleDoubleProperty()
     var value: Double
@@ -14,13 +16,12 @@ class VolumeBar : Pane() {
         }
 
     init {
-        bar.style = "-fx-background-color:yellow;"
-
-        bar.minWidth = 28.0
-        widthProperty().addListener({ _, _, n -> bar.prefWidth = n.toDouble() })
+        bar.fill = Color.YELLOW
+        heightProperty().addListener({ _, _, n -> bar.height = n.toDouble() })
+        widthProperty().addListener({ _, _, n -> bar.width = n.toDouble() })
         valueProperty.addListener({ _, _, n ->
-            bar.minHeight = n.toDouble() / 100.0 * height
-            bar.layoutY = height - n.toDouble() / 100.0 * height
+            //bar.height = n.toDouble() / 100.0 * height
+            bar.y = height - n.toDouble() / 100.0 * height
         })
         valueProperty.set(value)
 

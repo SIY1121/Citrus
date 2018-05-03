@@ -1,5 +1,6 @@
 package ui
 
+import com.jogamp.opengl.awt.GLJPanel
 import javafx.beans.InvalidationListener
 import javafx.embed.swing.SwingNode
 import javafx.event.ActionEvent
@@ -42,7 +43,7 @@ class Controller : Initializable {
     lateinit var rightVolumeBar: VolumeBar
 
 
-    lateinit var canvas : GlCanvas
+    lateinit var canvas : GLJPanel
 
     lateinit var welcomeScreen : Stage
 
@@ -50,7 +51,7 @@ class Controller : Initializable {
 
     override fun initialize(location: URL?, resources: ResourceBundle?) {
         println("initialize")
-        canvas = GlCanvas()
+        canvas = GLJPanel()
         glCanvas.content = canvas
         timelineController.parentController = this
 

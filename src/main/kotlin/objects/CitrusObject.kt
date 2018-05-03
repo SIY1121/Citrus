@@ -52,17 +52,6 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
 
     }
 
-    fun onSuperFrame(frameInVideo: Int) {
-        val frame = frameInVideo - start
-        pList.forEach {
-            val v = it.get(this)
-            if (v is CitrusAnimatableProperty<*>) v.frame = frame
-        }
-        onFrame(frame)
-    }
-
-    protected abstract fun onFrame(frame: Int)
-
     fun isActive(frame: Int) = (frame in start..(end - 1))
 
     var start: Int = 0

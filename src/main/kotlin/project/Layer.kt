@@ -9,7 +9,7 @@ import objects.DrawableObject
 class Layer : ArrayList<CitrusObject>(), Drawable, AudioSampleProvider {
 
     private var oldFrame = 0
-    private var currentObject: CitrusObject? = null
+    var currentObject: CitrusObject? = null
 
 
     override fun getSamples(frame: Int): ShortArray {

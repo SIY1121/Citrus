@@ -1,9 +1,6 @@
 package project
 
-import com.jogamp.opengl.GL
-import com.jogamp.opengl.GL2
-import com.jogamp.opengl.GLAutoDrawable
-import com.jogamp.opengl.GLEventListener
+import com.jogamp.opengl.*
 import com.jogamp.opengl.awt.GLJPanel
 import com.jogamp.opengl.glu.GLU
 import kotlinx.coroutines.experimental.launch
@@ -22,6 +19,13 @@ import javax.sound.sampled.DataLine
 import javax.sound.sampled.SourceDataLine
 
 class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
+    companion object {
+        lateinit var instance: ProjectRenderer
+        fun invoke(wait: Boolean, runnable: (drawable: GLAutoDrawable) -> Boolean): Boolean {
+            return instance.glPanel?.invoke(wait, runnable) ?: false
+        }
+    }
+
     var selectedScene = 0
 
     var glPanel: GLJPanel? = glp
@@ -45,6 +49,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     var recorder: FFmpegFrameRecorder? = null
 
     init {
+        instance = this
         val audioFormat = AudioFormat(project.sampleRate.toFloat(), 16, project.audioChannel, true, false)
         val info = DataLine.Info(SourceDataLine::class.java, audioFormat)
         audioLine = AudioSystem.getLine(info) as SourceDataLine
@@ -57,7 +62,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         glPanel?.display()
         val samples = project.scene[selectedScene].getSamples(frame)
 
-        launch{
+        launch {
             val data = samples.toByteArray()
             audioLine.write(data, 0, data.size)
         }

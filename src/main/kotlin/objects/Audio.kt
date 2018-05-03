@@ -109,7 +109,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             samplesPerFrame = (grabber?.sampleRate ?: Main.project.sampleRate) * (grabber?.audioChannels
                     ?: 2) / Main.project.fps
             //波形描画
-            renderWaveForm()
+            //renderWaveForm()
 
             audioLength = ((grabber?.lengthInFrames ?: 1) * (Main.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
@@ -146,66 +146,42 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         hBox.translateX = -(1 - hBox.scaleX) * hBox.width / 2.0
     }
 
-    override fun onFrame(frame: Int) {
-        //ファイルの読み込みが完了していた場合
-        if (isGrabberStarted) {
-            if (oldFrame != frame) {
-                //再生時の遅延を考慮して5フレーム分先読み
-                val now = ((frame + 5 + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
-                //30フレーム以上のスキップでシーク
-                if (Math.abs(frame - oldFrame) > 100 || frame < oldFrame) {
-                    TimelineController.wait = true
-                    grabber?.timestamp = now - 1000
-                    TimelineController.wait = false
-                    buf = grabber?.grabSamples()
-                }
-                //理想の時間まで再生
-                while (grabber?.timestamp ?: 0 <= now && buf != null) {
-                    if (buf?.samples != null) {
-                        val s = (buf?.samples?.get(0) as ShortBuffer)
-                        val arr = s.toByteArray()
-                        audioLine?.write(arr, 0, arr.size)
-                    }
-                    buf = grabber?.grabSamples()
-                }
-
-            }
-            oldFrame = frame
-        }
-    }
-
     var audioBuf: ShortBuffer? = null
 
     override fun getSamples(frame: Int): ShortArray {
         if (isGrabberStarted) {
-            if (oldFrame != frame) {
-                val now = ((frame + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
-                //
-                val requiredSamples = if (frame - oldFrame in 1..99) (frame - oldFrame) * samplesPerFrame else samplesPerFrame
-                val result = ShortArray(requiredSamples)
-                var readed = 0
+            if (frame == 0)
+                grabber?.timestamp = 0L
+            else
+                if (oldFrame != frame) {
+                    val now = ((frame + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
+                    //
+                    val requiredSamples = if (frame - oldFrame in 1..99) (frame - oldFrame) * samplesPerFrame else samplesPerFrame
+                    val result = ShortArray(requiredSamples)
+                    var readed = 0
 
-                if (Math.abs(frame - oldFrame) >= 100 || frame < oldFrame) {
-                    TimelineController.wait = true
-                    grabber?.timestamp = now - (1.0 / Main.project.fps * 1000 * 1000).toLong()
-                    TimelineController.wait = false
-                    buf = grabber?.grabSamples()
+                    if (Math.abs(frame - oldFrame) >= 100 || frame < oldFrame) {
+                        TimelineController.wait = true
+                        grabber?.timestamp = now - (1.0 / Main.project.fps * 1000 * 1000).toLong()
+                        TimelineController.wait = false
+                        buf = grabber?.grabSamples()
+                    }
+
+                    while (readed < requiredSamples) {
+
+                        if (audioBuf?.remaining() == 0 || audioBuf == null)//バッファが空orNullだったら
+                            buf = grabber?.grabSamples()//デコード
+
+                        audioBuf = (buf?.samples?.get(0) as ShortBuffer)
+                        val read = Math.min(requiredSamples - readed, audioBuf?.remaining()
+                                ?: (requiredSamples - readed))
+                        audioBuf?.get(result, readed, read)
+                        //println("read $readed <- $read")
+                        readed += read
+                    }
+                    oldFrame = frame
+                    return result
                 }
-
-                while (readed < requiredSamples) {
-
-                    if (audioBuf?.remaining() == 0 || audioBuf == null)//バッファが空orNullだったら
-                        buf = grabber?.grabSamples()//デコード
-
-                    audioBuf = (buf?.samples?.get(0) as ShortBuffer)
-                    val read = Math.min(requiredSamples - readed, audioBuf?.remaining() ?: (requiredSamples - readed))
-                    audioBuf?.get(result, readed, read)
-                    //println("read $readed <- $read")
-                    readed += read
-                }
-                oldFrame = frame
-                return result
-            }
         }
 
         return ShortArray(0)

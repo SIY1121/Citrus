@@ -8,8 +8,8 @@ import com.jogamp.opengl.GL2
 import com.jogamp.opengl.util.texture.Texture
 import com.jogamp.opengl.util.texture.TextureIO
 import javafx.stage.FileChooser
+import project.ProjectRenderer
 import properties.CFileProperty
-import ui.GlCanvas
 import java.io.File
 
 @CObject("画像", "00796BFF", "img/ic_photo.png")
@@ -38,7 +38,7 @@ class Image(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
 
     fun onFileLoad(file: String) {
         displayName = "[画像] ${File(file).name}"
-        GlCanvas.instance.invoke(false, {
+        ProjectRenderer.invoke(false, {
             texture = TextureIO.newTexture(File(file), false)
             texture?.enable(it.gl)
             false

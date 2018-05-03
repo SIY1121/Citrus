@@ -4,7 +4,6 @@ import annotation.CObject
 import annotation.CProperty
 import com.jogamp.opengl.GL2
 import properties.CAnimatableDoubleProperty
-import ui.GlCanvas
 
 /**
  * 描画が発生する小向ジェクトの親クラス
@@ -30,7 +29,9 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
     val rotate = CAnimatableDoubleProperty()
 
     override fun draw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
+        gl.glPushMatrix()
         onDraw(gl, mode, frame)
+        gl.glPopMatrix()
     }
 
     open fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
@@ -42,11 +43,5 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
 
         }
         gl.glBindTexture(GL2.GL_TEXTURE_2D, 0)
-    }
-
-    override fun onFrame(frame: Int) {
-        GlCanvas.gl2.glPushMatrix()
-        draw(GlCanvas.gl2, Drawable.DrawMode.Preview, frame)
-        GlCanvas.gl2.glPopMatrix()
     }
 }
