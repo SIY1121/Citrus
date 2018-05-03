@@ -58,7 +58,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
      */
     private var waveFormCanvas = Canvas()
 
-    private var waveLevelData = ShortArray(0)
+    private var waveLevelData = ByteArray(0)
 
     /**
      * サンプリングの間隔(秒)
@@ -195,7 +195,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
 
     private fun renderWaveForm() {
         waveFormCanvas.height = 30.0
-        waveLevelData = ShortArray(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution).toInt())
+        waveLevelData = ByteArray(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution).toInt())
 
 
         var buffer = grabber?.grabSamples()
@@ -217,7 +217,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             while (s.remaining() > 0) {
                 //1ブロック分を読み終わったら、描画
                 if (shortArray.size - read == 0) {
-                    val maxLevel = (shortArray.map { Math.abs(it.toInt()) }.max() ?: 0).toShort()
+                    val maxLevel = ((shortArray.map { Math.abs(it.toDouble() / Short.MAX_VALUE) }.max() ?: 0.0)* Byte.MAX_VALUE).toByte()
                     val averageLevel = shortArray.map { Math.abs(it.toInt()) }.average() / Short.MAX_VALUE.toDouble()
                     waveLevelData[blockCount] = maxLevel
                     read = 0
@@ -249,7 +249,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                 g.clearRect(0.0, 0.0, waveFormCanvas.width, waveFormCanvas.height)
                 g.fill = Color.WHITE
                 while (x < waveFormCanvas.width && (startSec / resolution).toInt() + i < waveLevelData.size) {
-                    val level = waveLevelData[(startSec / resolution).toInt() + i] / Short.MAX_VALUE.toDouble() * waveFormCanvas.height
+                    val level = waveLevelData[(startSec / resolution).toInt() + i] / Byte.MAX_VALUE.toDouble() * waveFormCanvas.height
                     g.fillRect(x, waveFormCanvas.height - level, pixelPerData, level)
                     x += pixelPerData
                     i++

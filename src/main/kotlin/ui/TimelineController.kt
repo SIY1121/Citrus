@@ -371,6 +371,10 @@ class TimelineController : Initializable {
         }
     }
 
+    var dvCount = 0
+    var leftMaxVol = 0.0
+    var rightMaxVol = 0.0
+
     private fun drawVolumeBar() {
         val canvas = parentController.volumeBar
 
@@ -379,18 +383,41 @@ class TimelineController : Initializable {
         val g = canvas.graphicsContext2D
         g.clearRect(0.0, 0.0, canvas.width, canvas.height)
 
+        //背景
         g.fill = Color.GRAY
         g.fillRect(0.0, 0.0, 20.0, canvas.height)
         g.fillRect(21.0, 0.0, 20.0, canvas.height)
 
+        //メーター
         g.fill = LinearGradient(0.0, 0.0, 0.0, canvas.height, false, CycleMethod.NO_CYCLE, Stop(0.0, Color.RED), Stop(canvas.height, Color.YELLOW))
         g.fillRect(0.0, canvas.height - (levelL / 60.0) * canvas.height, 20.0, (levelL / 60.0) * canvas.height)
         g.fillRect(21.0, canvas.height - (levelR / 60.0) * canvas.height, 20.0, (levelR / 60.0) * canvas.height)
-
+        //文字
         g.fill = Color.WHITE
         g.font = Font.font(8.0)
         for (i in 0..10) {
             g.fillText("${i * 6}dB", 41.0, (i / 10.0) * canvas.height + g.font.size)
+        }
+
+        if (levelL > leftMaxVol) {
+            dvCount = 0
+            leftMaxVol = levelL
+        }
+        if (levelR > rightMaxVol) {
+            dvCount = 0
+            rightMaxVol = levelR
+        }
+
+        //ピークホールド
+        g.fill = Color.WHITE
+        g.fillRect(0.0, canvas.height - (leftMaxVol / 60.0) * canvas.height, 20.0, 2.0)
+        g.fillRect(21.0, canvas.height - (rightMaxVol / 60.0) * canvas.height, 20.0, 2.0)
+
+        dvCount++
+        if (dvCount.toDouble() / projectRenderer.project.fps > 1) {
+            leftMaxVol = 0.0
+            rightMaxVol = 0.0
+            dvCount = 0
         }
     }
 
