@@ -7,13 +7,13 @@ import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
-import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
 import javafx.stage.FileChooser
 import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
+import org.bytedeco.javacv.FrameGrabber
 import properties.CAnimatableDoubleProperty
 import properties.CFileProperty
 import properties.CIntegerProperty
@@ -24,6 +24,7 @@ import ui.TimelineController
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
@@ -38,7 +39,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     val file = CFileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
 
     @CProperty("音量", 1)
-    val volume = CAnimatableDoubleProperty(0.0, 1.0, 1.0, 0.01)
+    val volume = CAnimatableDoubleProperty(0.0, 2.0, 1.0, 0.01)
 
     @CProperty("開始位置", 2)
     val startPos = CIntegerProperty(min = 0)
@@ -51,32 +52,22 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     private var oldFrame = 0
     private var buf: Frame? = null
 
-    private var audioLength = 0
-
     /**
-     * 波形キャンバス格納用
+     * プロジェクトのビデオフレームでの音声の長さ
      */
-    private val hBox = HBox()
+    private var audioLength = 0
 
     /**
      * 波形レンダリング用キャンバス
      */
-    private var waveFormCanvases: Array<Canvas> = Array(1, { _ -> Canvas() })
+    private var waveFormCanvas = Canvas()
+
+    private var waveLevelData = ByteArray(0)
 
     /**
      * サンプリングの間隔(秒)
      */
-    private val resolution = 0.015
-
-    /**
-     * キャンバスの最大幅
-     */
-    private val canvasSize = 4096
-
-    /**
-     * hboxクリップ用
-     */
-    private val rect = Rectangle(100.0, 30.0)
+    private val resolution = 0.01
 
     private var samplesPerFrame = 0
 
@@ -95,6 +86,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         launch {
             grabber = FFmpegFrameGrabber(file)
             grabber?.sampleRate = Main.project.sampleRate
+            grabber?.sampleMode = FrameGrabber.SampleMode.FLOAT
             grabber?.audioChannels = Main.project.audioChannel
             grabber?.start()
             if (grabber?.audioCodec == 0) {
@@ -106,15 +98,20 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                 }
                 return@launch
             }
+
             samplesPerFrame = (grabber?.sampleRate ?: Main.project.sampleRate) * (grabber?.audioChannels
                     ?: 2) / Main.project.fps
-            //波形描画
-            //renderWaveForm()
 
             audioLength = ((grabber?.lengthInFrames ?: 1) * (Main.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
+
             startPos.max = audioLength
             end = start + audioLength
+
+            //波形データ生成
+            cacheWaveData()
+            setupWaveformCanvas()
+
             //オーディオ出力準備
             val audioFormat = AudioFormat((grabber?.sampleRate?.toFloat() ?: 0f), 16, 2, true, false)
 
@@ -135,33 +132,33 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
 
     override fun onLayoutUpdate(mode: TimeLineObject.EditMode) {
         if (audioLength == 0) return
-        if (end - start > audioLength - startPos.value.toInt())
-            end = start + audioLength - startPos.value.toInt()
-
-        uiObject?.onScaleChanged()
+        fitUIObjectSize()
     }
 
     override fun onScaleUpdate() {
-        hBox.scaleX = (audioLength) * TimelineController.pixelPerFrame / hBox.width
-        hBox.translateX = -(1 - hBox.scaleX) * hBox.width / 2.0
+
     }
 
-    var audioBuf: ShortBuffer? = null
+    var audioBuf: FloatBuffer? = null
 
-    override fun getSamples(frame: Int): ShortArray {
+    override fun getSamples(frame: Int): FloatArray {
         if (isGrabberStarted) {
-            if (frame == 0)
-                grabber?.timestamp = 0L
-            else
+            if (frame == 0) {
+                grabber?.sampleMode = FrameGrabber.SampleMode.FLOAT
+                grabber?.timestamp = startPos.value.toLong()
+                oldFrame = 0
+                audioBuf = null
+            } else
                 if (oldFrame != frame) {
                     val now = ((frame + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
-                    //
+
                     val requiredSamples = if (frame - oldFrame in 1..99) (frame - oldFrame) * samplesPerFrame else samplesPerFrame
-                    val result = ShortArray(requiredSamples)
+                    val result = FloatArray(requiredSamples)
                     var readed = 0
 
                     if (Math.abs(frame - oldFrame) >= 100 || frame < oldFrame) {
                         TimelineController.wait = true
+                        grabber?.sampleMode = FrameGrabber.SampleMode.FLOAT
                         grabber?.timestamp = now - (1.0 / Main.project.fps * 1000 * 1000).toLong()
                         TimelineController.wait = false
                         buf = grabber?.grabSamples()
@@ -172,7 +169,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                         if (audioBuf?.remaining() == 0 || audioBuf == null)//バッファが空orNullだったら
                             buf = grabber?.grabSamples()//デコード
 
-                        audioBuf = (buf?.samples?.get(0) as ShortBuffer)
+                        audioBuf = (buf?.samples?.get(0) as FloatBuffer)
                         val read = Math.min(requiredSamples - readed, audioBuf?.remaining()
                                 ?: (requiredSamples - readed))
                         audioBuf?.get(result, readed, read)
@@ -180,66 +177,42 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                         readed += read
                     }
                     oldFrame = frame
-                    return result
+
+                    return result.map { it * 0.97f * volume.value.toFloat() }.toFloatArray()
                 }
         }
 
-        return ShortArray(0)
+        return FloatArray(0)
     }
 
-    //ShortArrayをリトルエンディアンでbyte配列に変換
-    private fun ShortBuffer.toByteArray(): ByteArray {
-        val byteBuffer = ByteBuffer.allocate(this.limit() * 2).order(ByteOrder.LITTLE_ENDIAN)
-        val shortArray = ShortArray(this.limit())
-        this.get(shortArray)
+    private fun cacheWaveData() {
+        waveFormCanvas.height = 30.0
+        waveLevelData = ByteArray(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution).toInt())
 
-        byteBuffer.asShortBuffer().put(shortArray.map { (it * volume.value.toDouble()).toShort() }.toShortArray())
-        return byteBuffer.array()
-    }
-
-    private fun renderWaveForm() {
-        //必要数のキャンバスを作成
-        waveFormCanvases = Array(((grabber?.lengthInTime
-                ?: 0) / 1000.0 / 1000.0 / resolution / canvasSize.toDouble()).toInt() + 1, { _ -> Canvas(0.0, 30.0) })
-        waveFormCanvases[0] = Canvas(canvasSize.toDouble(), 30.0)
-        var g = waveFormCanvases[0].graphicsContext2D
 
         var buffer = grabber?.grabSamples()
 
         //1キャンバス中で描画したブロックの数
         var blockCount = 0
         //1ブロック分のサンプルを保持しておく配列
-        val shortArray = ShortArray(((grabber?.sampleRate ?: 44100) * (grabber?.audioChannels
+        val shortArray = FloatArray(((grabber?.sampleRate ?: 44100) * (grabber?.audioChannels
                 ?: 2) * resolution).toInt())
         //1ブロック分を読み取るまでのカウンタ
         var read = 0
-        //描画を終えたキャンバスの数
-        var canvasCount = 0
         while (buffer != null) {
             //デコード
-            val s = (buffer.samples?.get(0) as ShortBuffer)
+            val s = (buffer.samples?.get(0) as FloatBuffer)
 
             //デコードしたサンプルを全て読み終わるまでループ
             while (s.remaining() > 0) {
-                //1ブロック分を読み終わったら、描画
+                //1ブロック分を読み終わったら、データを格納
                 if (shortArray.size - read == 0) {
-                    val maxLevel = (shortArray.map { Math.abs(it.toInt()) }.max() ?: 0) / Short.MAX_VALUE.toDouble()
-                    val averageLevel = shortArray.map { Math.abs(it.toInt()) }.average() / Short.MAX_VALUE.toDouble()
-                    g.fill = Color.WHITE
-                    g.fillRect(blockCount.toDouble(), (1 - maxLevel) * g.canvas.height, 1.0, maxLevel * g.canvas.height)
-                    g.fill = Color.LIGHTGRAY
-                    g.fillRect(blockCount.toDouble(), (1 - averageLevel) * g.canvas.height, 1.0, averageLevel * g.canvas.height)
+                    val maxLevel = Math.min(((shortArray.map { Math.abs(it.toDouble()) }.max()
+                            ?: 0.0) * Byte.MAX_VALUE), Byte.MAX_VALUE.toDouble()).toByte()
+                    //val averageLevel = shortArray.map { Math.abs(it.toInt()) }.average() / Short.MAX_VALUE.toDouble()
+                    waveLevelData[blockCount] = maxLevel
                     read = 0
                     blockCount++
-
-                    //キャンバスを全て埋め終わった場合
-                    if (blockCount == canvasSize) {
-                        waveFormCanvases[canvasCount].width = canvasSize.toDouble()
-                        canvasCount++
-                        blockCount = 0
-                        waveFormCanvases[canvasCount] = Canvas(canvasSize.toDouble(), 30.0)
-                        g = waveFormCanvases[canvasCount].graphicsContext2D
-                    }
                 }
 
                 val old = s.position()
@@ -255,21 +228,67 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             }
             buffer = grabber?.grabSamples()
         }
-
-        //最後のキャンバスは、描画されていない部分が余るので、サイズ調整
-        waveFormCanvases[canvasCount].width = blockCount.toDouble()
-
-
-        Platform.runLater {
-            //クリップ用のrectの幅をuiObjectにバインド
-            uiObject?.widthProperty()?.addListener({ _, _, n ->
-                rect.width = n.toDouble() / hBox.scaleX
-            })
-            uiObject?.headerPane?.children?.add(0, hBox)
-            hBox.clip = rect
-            hBox.children.addAll(waveFormCanvases)
-        }
         grabber?.timestamp = 0L
 
+    }
+
+    private fun setupWaveformCanvas(){
+        Platform.runLater {
+            uiObject?.timelineController?.hScrollBar?.valueProperty()?.addListener({ _, _, _ ->
+                renderWaveform()
+            })
+            waveFormCanvas.width = uiObject?.timelineController?.hScrollBar?.width ?: 0.0
+            uiObject?.timelineController?.hScrollBar?.widthProperty()?.addListener { _, _, n ->
+                waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width ?: 0.0, (uiObject?.width
+                        ?: 1.0) - waveFormCanvas.layoutX)
+                renderWaveform()
+            }
+            uiObject?.widthProperty()?.addListener { _, _, n ->
+                waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width ?: 0.0, (uiObject?.width
+                        ?: 1.0) - waveFormCanvas.layoutX)
+                renderWaveform()
+            }
+            startPos.valueProperty.addListener { _, _, _ ->
+                fitUIObjectSize()
+                renderWaveform()
+            }
+
+            uiObject?.headerPane?.children?.add(0, waveFormCanvas)
+            renderWaveform()
+        }
+    }
+
+    private fun renderWaveform() {
+        //冗長なのを防ぐ
+        val offsetX = uiObject?.timelineController?.offsetX ?: 0.0
+        //offsetは通常正だが念の為
+        if (offsetX >= 0) {
+            waveFormCanvas.layoutX = Math.max(offsetX - (uiObject?.layoutX ?: 0.0), 0.0)
+            waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width
+                    ?: 0.0, (uiObject?.width ?: 1.0) - waveFormCanvas.layoutX)
+
+
+            val startSec = Math.max(((offsetX - (uiObject?.layoutX
+                    ?: 0.0)) / TimelineController.pixelPerFrame) / Main.project.fps + (startPos.value.toDouble() / Main.project.fps), 0.0)
+            val pixelPerData = (Main.project.fps * TimelineController.pixelPerFrame) * resolution
+            var x = 0.0
+            var i = 0
+            val g = waveFormCanvas.graphicsContext2D
+            g.clearRect(0.0, 0.0, waveFormCanvas.width, waveFormCanvas.height)
+            g.fill = Color.WHITE
+            while (x < waveFormCanvas.width && (startSec / resolution).toInt() + i < waveLevelData.size) {
+                val level = waveLevelData[(startSec / resolution).toInt() + i] / Byte.MAX_VALUE.toDouble() * waveFormCanvas.height
+                g.fillRect(x, waveFormCanvas.height - level, pixelPerData, level)
+                x += pixelPerData
+                i++
+            }
+        }
+    }
+
+    private fun fitUIObjectSize(){
+        if (end - start > audioLength - startPos.value.toInt())
+            end = start + audioLength - startPos.value.toInt()
+
+        uiObject?.onScaleChanged()
     }
 }

@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.embed.swing.SwingNode?>
+<?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.shape.Rectangle?>
 
-<?import ui.VolumeBar?>
 <Pane fx:id="rootPane" prefHeight="500.0" prefWidth="500.0" stylesheets="/layout/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.Controller">
     <BorderPane fx:id="borderPane" prefHeight="500.0" prefWidth="500.0">
         <top>
@@ -39,10 +41,15 @@
                     <AnchorPane fx:id="rightPane" minWidth="150" />
                 </SplitPane>
                 <AnchorPane>
-                    <fx:include fx:id="timeline" source="timeline.fxml" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="60" AnchorPane.topAnchor="0" />
-                    <AnchorPane prefWidth="60.0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
-                        <VolumeBar fx:id="leftVolumeBar" prefWidth="28" style="-fx-background-color: gray;" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0" value="50.0" />
-                        <VolumeBar fx:id="rightVolumeBar" prefWidth="28" style="-fx-background-color: gray;" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" value="20.0"/>
+                    <fx:include fx:id="timeline" source="timeline.fxml" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="80" AnchorPane.topAnchor="0" />
+                    <AnchorPane prefWidth="80.0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
+                        <HBox prefHeight="8" spacing="1" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="20" AnchorPane.topAnchor="0">
+                            <Rectangle fx:id="volumeLeftLight" height="10" width="25" />
+                            <Rectangle fx:id="volumeRightLight" height="10" width="25" />
+                        </HBox>
+                        <Pane fx:id="volumeBarWrapper" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="10">
+                            <Canvas fx:id="volumeBar" style="-fx-background-color: gray;" width="80.0" />
+                        </Pane>
                     </AnchorPane>
                 </AnchorPane>
             </SplitPane>

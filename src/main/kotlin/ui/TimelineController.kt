@@ -13,6 +13,9 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
+import javafx.scene.paint.CycleMethod
+import javafx.scene.paint.LinearGradient
+import javafx.scene.paint.Stop
 import javafx.scene.shape.Line
 import javafx.scene.shape.Polygon
 import javafx.scene.shape.Rectangle
@@ -63,8 +66,8 @@ class TimelineController : Initializable {
             if (field != value) {
                 field = value
                 projectRenderer.renderPreview(field)
-                parentController.leftVolumeBar.value = Math.max(projectRenderer.leftAudioLevel + 100, 0.0)
-                parentController.rightVolumeBar.value = Math.max(projectRenderer.rightAudioLevel + 100, 0.0)
+                Platform.runLater { drawVolumeBar() }
+
             }
         }
 
@@ -72,6 +75,8 @@ class TimelineController : Initializable {
         set(value) {
             field = value
             projectRenderer.glPanel = field.canvas
+            drawVolumeBar()
+
 //            parentController.rootPane.setOnKeyPressed {
 //                when (it.code) {
 //                    KeyCode.SPACE -> {
@@ -122,7 +127,7 @@ class TimelineController : Initializable {
     var tick: Double = Main.project.fps.toDouble()
 
     val offsetX: Double
-        get() = layerScrollPane.hvalue * (layerVBox.width - layerScrollPane.viewportBounds.width)
+        get() = hScrollBar.value * (layerVBox.width - layerScrollPane.viewportBounds.width)
 
     var selectedObjects: MutableList<TimeLineObject> = ArrayList()
     var selectedObjectOldWidth: MutableList<Double> = ArrayList()
@@ -364,6 +369,73 @@ class TimelineController : Initializable {
             }
         }
     }
+
+    var dvCount = 0
+    var leftMaxVol = 0.0
+    var rightMaxVol = 0.0
+
+    private fun drawVolumeBar() {
+        val canvas = parentController.volumeBar
+
+        val levelL = 60 + 20 * Math.log10(projectRenderer.leftAudioLevel)
+        val levelR = 60 + 20 * Math.log10(projectRenderer.rightAudioLevel)
+        val g = canvas.graphicsContext2D
+        g.clearRect(0.0, 0.0, canvas.width, canvas.height)
+
+        //背景
+        g.fill = Color.GRAY
+        g.fillRect(0.0, 0.0, 25.0, canvas.height)
+        g.fillRect(26.0, 0.0, 25.0, canvas.height)
+
+        //メーター
+        g.fill = LinearGradient(0.0, 0.0, 0.0, canvas.height, false, CycleMethod.NO_CYCLE, Stop(0.0, Color.RED), Stop(canvas.height, Color.YELLOW))
+        g.fillRect(0.0, canvas.height - (levelL / 60.0) * canvas.height, 25.0, (levelL / 60.0) * canvas.height)
+        g.fillRect(26.0, canvas.height - (levelR / 60.0) * canvas.height, 25.0, (levelR / 60.0) * canvas.height)
+        //文字
+        g.fill = Color.WHITE
+        g.stroke = Color.WHITE
+        g.font = Font.font(9.0)
+        for (i in 0..60) {
+            if (i % 6 == 0){
+                g.fillText("-${i}dB", 56.0, (i / 60.0) * canvas.height + g.font.size)
+                g.strokeLine(51.0, (i / 60.0) * canvas.height, 55.0, (i / 60.0) * canvas.height)
+            }
+
+        }
+
+        if (projectRenderer.leftAudioLevel > leftMaxVol) {
+            dvCount = 0
+            leftMaxVol = projectRenderer.leftAudioLevel
+        }
+        if (projectRenderer.rightAudioLevel > rightMaxVol) {
+            dvCount = 0
+            rightMaxVol = projectRenderer.rightAudioLevel
+        }
+
+        parentController.volumeLeftLight.fill =
+                if (leftMaxVol > 1)
+                    LinearGradient(0.0, 0.0, 0.0, 1.0, true, CycleMethod.NO_CYCLE, Stop(0.5, Color.YELLOW), Stop(1.0, Color.YELLOW.darker()))
+                else LinearGradient(0.0, 0.0, 0.0, 1.0, true, CycleMethod.NO_CYCLE, Stop(0.5, Color.DARKGRAY), Stop(1.0, Color.BLACK))
+        parentController.volumeRightLight.fill =
+                if (leftMaxVol > 1)
+                    LinearGradient(0.0, 0.0, 0.0, 1.0, true, CycleMethod.NO_CYCLE, Stop(0.5, Color.YELLOW), Stop(1.0, Color.YELLOW.darker()))
+                else LinearGradient(0.0, 0.0, 0.0, 1.0, true, CycleMethod.NO_CYCLE, Stop(0.5, Color.DARKGRAY), Stop(1.0, Color.BLACK))
+
+        //ピークホールド
+        g.fill = Color.WHITE
+        val maxL = 60 + 20 * Math.log10(leftMaxVol)
+        val maxR = 60 + 20 * Math.log10(rightMaxVol)
+        g.fillRect(0.0, canvas.height - (maxL / 60.0) * canvas.height, 25.0, 2.0)
+        g.fillRect(26.0, canvas.height - (maxR / 60.0) * canvas.height, 25.0, 2.0)
+
+        dvCount++
+        if (dvCount.toDouble() / projectRenderer.project.fps > 1) {
+            leftMaxVol = 0.0
+            rightMaxVol = 0.0
+            dvCount = 0
+        }
+    }
+
 
     fun layerScrollPaneOnMousePressed(mouseEvent: MouseEvent) {
         if (mouseEvent.button != MouseButton.PRIMARY) return

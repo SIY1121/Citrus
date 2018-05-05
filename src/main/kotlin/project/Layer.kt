@@ -12,24 +12,24 @@ class Layer : ArrayList<CitrusObject>(), Drawable, AudioSampleProvider {
     var currentObject: CitrusObject? = null
 
 
-    override fun getSamples(frame: Int): ShortArray {
+    override fun getSamples(frame: Int): FloatArray {
         if (currentObject?.isActive(frame) == true) {
             val a = currentObject
             if (a is AudioSampleProvider)
-                return a.getSamples(frame)
+                return a.getSamples(frame - a.start)
         } else if (currentObject?.isActive(frame) == false) {
             currentObject = null
             currentObject = firstOrNull { it.isActive(frame) }
         } else {
             currentObject = firstOrNull { it.isActive(frame) }
         }
-        return ShortArray(0)
+        return FloatArray(0)
     }
 
     override fun draw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
         if (currentObject?.isActive(frame) == true) {
             val d = currentObject
-            if (d is Drawable) d.draw(gl, mode, frame)
+            if (d is Drawable) d.draw(gl, mode, frame - d.start)
         } else if (currentObject?.isActive(frame) == false) {
             currentObject = null
             currentObject = firstOrNull { it.isActive(frame) }
