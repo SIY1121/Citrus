@@ -7,7 +7,6 @@ import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
-import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
 import javafx.stage.FileChooser
@@ -53,6 +52,9 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     private var oldFrame = 0
     private var buf: Frame? = null
 
+    /**
+     * プロジェクトのビデオフレームでの音声の長さ
+     */
     private var audioLength = 0
 
     /**
@@ -65,17 +67,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     /**
      * サンプリングの間隔(秒)
      */
-    private val resolution = 0.015
-
-    /**
-     * キャンバスの最大幅
-     */
-    private val canvasSize = 4096
-
-    /**
-     * hboxクリップ用
-     */
-    private val rect = Rectangle(100.0, 30.0)
+    private val resolution = 0.01
 
     private var samplesPerFrame = 0
 
@@ -106,15 +98,20 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                 }
                 return@launch
             }
+
             samplesPerFrame = (grabber?.sampleRate ?: Main.project.sampleRate) * (grabber?.audioChannels
                     ?: 2) / Main.project.fps
-            //波形描画
-            renderWaveForm()
 
             audioLength = ((grabber?.lengthInFrames ?: 1) * (Main.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
+
             startPos.max = audioLength
             end = start + audioLength
+
+            //波形データ生成
+            cacheWaveData()
+            setupWaveformCanvas()
+
             //オーディオ出力準備
             val audioFormat = AudioFormat((grabber?.sampleRate?.toFloat() ?: 0f), 16, 2, true, false)
 
@@ -135,10 +132,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
 
     override fun onLayoutUpdate(mode: TimeLineObject.EditMode) {
         if (audioLength == 0) return
-        if (end - start > audioLength - startPos.value.toInt())
-            end = start + audioLength - startPos.value.toInt()
-
-        uiObject?.onScaleChanged()
+        fitUIObjectSize()
     }
 
     override fun onScaleUpdate() {
@@ -151,7 +145,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         if (isGrabberStarted) {
             if (frame == 0) {
                 grabber?.sampleMode = FrameGrabber.SampleMode.FLOAT
-                grabber?.timestamp = 0L
+                grabber?.timestamp = startPos.value.toLong()
                 oldFrame = 0
                 audioBuf = null
             } else
@@ -169,8 +163,6 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                         TimelineController.wait = false
                         buf = grabber?.grabSamples()
                     }
-
-                    println("audio frame $frame")
 
                     while (readed < requiredSamples) {
 
@@ -193,17 +185,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         return FloatArray(0)
     }
 
-    //ShortArrayをリトルエンディアンでbyte配列に変換
-    private fun ShortBuffer.toByteArray(): ByteArray {
-        val byteBuffer = ByteBuffer.allocate(this.limit() * 2).order(ByteOrder.LITTLE_ENDIAN)
-        val shortArray = ShortArray(this.limit())
-        this.get(shortArray)
-
-        byteBuffer.asShortBuffer().put(shortArray.map { (it * volume.value.toDouble()).toShort() }.toShortArray())
-        return byteBuffer.array()
-    }
-
-    private fun renderWaveForm() {
+    private fun cacheWaveData() {
         waveFormCanvas.height = 30.0
         waveLevelData = ByteArray(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution).toInt())
 
@@ -246,43 +228,67 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             }
             buffer = grabber?.grabSamples()
         }
+        grabber?.timestamp = 0L
 
+    }
+
+    private fun setupWaveformCanvas(){
         Platform.runLater {
             uiObject?.timelineController?.hScrollBar?.valueProperty()?.addListener({ _, _, _ ->
-                if ((uiObject?.timelineController?.offsetX ?: -1.0) > 0) {
-                    val startSec = Math.max((((uiObject?.timelineController?.offsetX
-                            ?: 0.0) - (uiObject?.layoutX ?: 0.0)) / TimelineController.pixelPerFrame) / Main.project.fps,0.0)
-                    val pixelPerData = (Main.project.fps * TimelineController.pixelPerFrame) * resolution
-                    var x = 0.0
-                    var i = 0
-                    val g = waveFormCanvas.graphicsContext2D
-                    g.clearRect(0.0, 0.0, waveFormCanvas.width, waveFormCanvas.height)
-                    g.fill = Color.WHITE
-                    while (x < waveFormCanvas.width && (startSec / resolution).toInt() + i < waveLevelData.size) {
-                        val level = waveLevelData[(startSec / resolution).toInt() + i] / Byte.MAX_VALUE.toDouble() * waveFormCanvas.height
-                        g.fillRect(x, waveFormCanvas.height - level, pixelPerData, level)
-                        x += pixelPerData
-                        i++
-                    }
-
-                    waveFormCanvas.layoutX = Math.max((uiObject?.timelineController?.offsetX ?: 0.0) - (uiObject?.layoutX ?:0.0),0.0)
-                    waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width
-                            ?: 0.0, (uiObject?.width ?: 1.0) - waveFormCanvas.layoutX)
-                }
+                renderWaveform()
             })
             waveFormCanvas.width = uiObject?.timelineController?.hScrollBar?.width ?: 0.0
             uiObject?.timelineController?.hScrollBar?.widthProperty()?.addListener { _, _, n ->
                 waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width ?: 0.0, (uiObject?.width
                         ?: 1.0) - waveFormCanvas.layoutX)
+                renderWaveform()
             }
             uiObject?.widthProperty()?.addListener { _, _, n ->
                 waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width ?: 0.0, (uiObject?.width
                         ?: 1.0) - waveFormCanvas.layoutX)
+                renderWaveform()
+            }
+            startPos.valueProperty.addListener { _, _, _ ->
+                fitUIObjectSize()
+                renderWaveform()
             }
 
             uiObject?.headerPane?.children?.add(0, waveFormCanvas)
+            renderWaveform()
         }
-        grabber?.timestamp = 0L
+    }
 
+    private fun renderWaveform() {
+        //冗長なのを防ぐ
+        val offsetX = uiObject?.timelineController?.offsetX ?: 0.0
+        //offsetは通常正だが念の為
+        if (offsetX >= 0) {
+            waveFormCanvas.layoutX = Math.max(offsetX - (uiObject?.layoutX ?: 0.0), 0.0)
+            waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width
+                    ?: 0.0, (uiObject?.width ?: 1.0) - waveFormCanvas.layoutX)
+
+
+            val startSec = Math.max(((offsetX - (uiObject?.layoutX
+                    ?: 0.0)) / TimelineController.pixelPerFrame) / Main.project.fps + (startPos.value.toDouble() / Main.project.fps), 0.0)
+            val pixelPerData = (Main.project.fps * TimelineController.pixelPerFrame) * resolution
+            var x = 0.0
+            var i = 0
+            val g = waveFormCanvas.graphicsContext2D
+            g.clearRect(0.0, 0.0, waveFormCanvas.width, waveFormCanvas.height)
+            g.fill = Color.WHITE
+            while (x < waveFormCanvas.width && (startSec / resolution).toInt() + i < waveLevelData.size) {
+                val level = waveLevelData[(startSec / resolution).toInt() + i] / Byte.MAX_VALUE.toDouble() * waveFormCanvas.height
+                g.fillRect(x, waveFormCanvas.height - level, pixelPerData, level)
+                x += pixelPerData
+                i++
+            }
+        }
+    }
+
+    private fun fitUIObjectSize(){
+        if (end - start > audioLength - startPos.value.toInt())
+            end = start + audioLength - startPos.value.toInt()
+
+        uiObject?.onScaleChanged()
     }
 }

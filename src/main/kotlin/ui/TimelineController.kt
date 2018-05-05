@@ -75,6 +75,7 @@ class TimelineController : Initializable {
         set(value) {
             field = value
             projectRenderer.glPanel = field.canvas
+            drawVolumeBar()
 
 //            parentController.rootPane.setOnKeyPressed {
 //                when (it.code) {
@@ -126,7 +127,7 @@ class TimelineController : Initializable {
     var tick: Double = Main.project.fps.toDouble()
 
     val offsetX: Double
-        get() = layerScrollPane.hvalue * (layerVBox.width - layerScrollPane.viewportBounds.width)
+        get() = hScrollBar.value * (layerVBox.width - layerScrollPane.viewportBounds.width)
 
     var selectedObjects: MutableList<TimeLineObject> = ArrayList()
     var selectedObjectOldWidth: MutableList<Double> = ArrayList()
