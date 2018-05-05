@@ -149,22 +149,28 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
 
     override fun getSamples(frame: Int): FloatArray {
         if (isGrabberStarted) {
-            if (frame == 0)
+            if (frame == 0) {
+                grabber?.sampleMode = FrameGrabber.SampleMode.FLOAT
                 grabber?.timestamp = 0L
-            else
+                oldFrame = 0
+                audioBuf = null
+            } else
                 if (oldFrame != frame) {
                     val now = ((frame + startPos.value.toInt()) * (1.0 / Main.project.fps) * 1000 * 1000).toLong()
-                    //
+
                     val requiredSamples = if (frame - oldFrame in 1..99) (frame - oldFrame) * samplesPerFrame else samplesPerFrame
                     val result = FloatArray(requiredSamples)
                     var readed = 0
 
                     if (Math.abs(frame - oldFrame) >= 100 || frame < oldFrame) {
                         TimelineController.wait = true
+                        grabber?.sampleMode = FrameGrabber.SampleMode.FLOAT
                         grabber?.timestamp = now - (1.0 / Main.project.fps * 1000 * 1000).toLong()
                         TimelineController.wait = false
                         buf = grabber?.grabSamples()
                     }
+
+                    println("audio frame $frame")
 
                     while (readed < requiredSamples) {
 
@@ -243,31 +249,35 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
 
         Platform.runLater {
             uiObject?.timelineController?.hScrollBar?.valueProperty()?.addListener({ _, _, _ ->
-                val startSec = ((uiObject?.timelineController?.offsetX
-                        ?: 0.0) / TimelineController.pixelPerFrame) / Main.project.fps
-                val pixelPerData = (Main.project.fps * TimelineController.pixelPerFrame) * resolution
-                var x = 0.0
-                var i = 0
-                val g = waveFormCanvas.graphicsContext2D
-                g.clearRect(0.0, 0.0, waveFormCanvas.width, waveFormCanvas.height)
-                g.fill = Color.WHITE
-                while (x < waveFormCanvas.width && (startSec / resolution).toInt() + i < waveLevelData.size) {
-                    val level = waveLevelData[(startSec / resolution).toInt() + i] / Byte.MAX_VALUE.toDouble() * waveFormCanvas.height
-                    g.fillRect(x, waveFormCanvas.height - level, pixelPerData, level)
-                    x += pixelPerData
-                    i++
+                if ((uiObject?.timelineController?.offsetX ?: -1.0) > 0) {
+                    val startSec = Math.max((((uiObject?.timelineController?.offsetX
+                            ?: 0.0) - (uiObject?.layoutX ?: 0.0)) / TimelineController.pixelPerFrame) / Main.project.fps,0.0)
+                    val pixelPerData = (Main.project.fps * TimelineController.pixelPerFrame) * resolution
+                    var x = 0.0
+                    var i = 0
+                    val g = waveFormCanvas.graphicsContext2D
+                    g.clearRect(0.0, 0.0, waveFormCanvas.width, waveFormCanvas.height)
+                    g.fill = Color.WHITE
+                    while (x < waveFormCanvas.width && (startSec / resolution).toInt() + i < waveLevelData.size) {
+                        val level = waveLevelData[(startSec / resolution).toInt() + i] / Byte.MAX_VALUE.toDouble() * waveFormCanvas.height
+                        g.fillRect(x, waveFormCanvas.height - level, pixelPerData, level)
+                        x += pixelPerData
+                        i++
+                    }
+
+                    waveFormCanvas.layoutX = Math.max((uiObject?.timelineController?.offsetX ?: 0.0) - (uiObject?.layoutX ?:0.0),0.0)
+                    waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width
+                            ?: 0.0, (uiObject?.width ?: 1.0) - waveFormCanvas.layoutX)
                 }
-
-                waveFormCanvas.layoutX = uiObject?.timelineController?.offsetX ?: 0.0
-                waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width?:0.0,(uiObject?.width?:1.0)-waveFormCanvas.layoutX)
-
             })
             waveFormCanvas.width = uiObject?.timelineController?.hScrollBar?.width ?: 0.0
             uiObject?.timelineController?.hScrollBar?.widthProperty()?.addListener { _, _, n ->
-                waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width?:0.0,(uiObject?.width?:1.0)-waveFormCanvas.layoutX)
+                waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width ?: 0.0, (uiObject?.width
+                        ?: 1.0) - waveFormCanvas.layoutX)
             }
             uiObject?.widthProperty()?.addListener { _, _, n ->
-                waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width?:0.0,(uiObject?.width?:1.0)-waveFormCanvas.layoutX)
+                waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width ?: 0.0, (uiObject?.width
+                        ?: 1.0) - waveFormCanvas.layoutX)
             }
 
             uiObject?.headerPane?.children?.add(0, waveFormCanvas)

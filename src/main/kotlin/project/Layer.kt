@@ -16,7 +16,7 @@ class Layer : ArrayList<CitrusObject>(), Drawable, AudioSampleProvider {
         if (currentObject?.isActive(frame) == true) {
             val a = currentObject
             if (a is AudioSampleProvider)
-                return a.getSamples(frame)
+                return a.getSamples(frame - a.start)
         } else if (currentObject?.isActive(frame) == false) {
             currentObject = null
             currentObject = firstOrNull { it.isActive(frame) }
@@ -29,7 +29,7 @@ class Layer : ArrayList<CitrusObject>(), Drawable, AudioSampleProvider {
     override fun draw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
         if (currentObject?.isActive(frame) == true) {
             val d = currentObject
-            if (d is Drawable) d.draw(gl, mode, frame)
+            if (d is Drawable) d.draw(gl, mode, frame - d.start)
         } else if (currentObject?.isActive(frame) == false) {
             currentObject = null
             currentObject = firstOrNull { it.isActive(frame) }
