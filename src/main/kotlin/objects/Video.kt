@@ -6,13 +6,21 @@ import annotation.CProperty
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import javafx.application.Platform
+import javafx.scene.Cursor
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
+import javafx.scene.image.ImageView
+import javafx.scene.image.PixelFormat
+import javafx.scene.image.WritableImage
+import javafx.scene.layout.Pane
 import javafx.stage.FileChooser
 import kotlinx.coroutines.experimental.launch
-import mod.FFmpegFrameGrabberMod
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
+import org.opencv.core.CvType
+import org.opencv.core.Mat
+import org.opencv.core.Size
+import org.opencv.imgproc.Imgproc
 import project.ProjectRenderer
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
@@ -25,7 +33,7 @@ import java.nio.ShortBuffer
 
 @CObject("動画", "F57C00", "img/ic_movie.png")
 @CDroppable(["asf", "wmv", "wma", "asf", "wmv", "wma", "avi", "flv", "h261", "h263", "m4v", "m4a", "ismv", "isma", "mkv", "mjpg", "mjpeg", "mp4", "mpg", "mpeg", "mpg", "mpeg", "m1v", "dvd", "vob", "vob", "ts", "m2t", "m2ts", "mts", "nut", "ogv", "webm", "chk"])
-class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
+class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
 
     override val id = "citrus/video"
     override val name = "動画"
@@ -48,6 +56,10 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
 
     var oldStart = 0
 
+    var thumbPane = Pane()
+
+    var thumsTimestamp : MutableList<Long> = ArrayList()
+
     init {
         file.valueProperty.addListener { _, _, n -> onFileLoad(n.toString()) }
         displayName = "[動画]"
@@ -64,6 +76,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
         launch {
             //デコーダ準備
             grabber = FFmpegFrameGrabber(file)
+            grabber?.setVideoOption("threads","0")
             grabber?.start()
             if (grabber?.videoCodec == 0) {
                 Platform.runLater {
@@ -103,6 +116,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
                 println("allocate ${grabber?.imageWidth}x${grabber?.imageHeight}")
                 false
             })
+            renderThumbs()
             Platform.runLater {
                 dialog.close()
                 uiObject?.onScaleChanged()
@@ -124,6 +138,13 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
         }
         oldStart = start
         uiObject?.onScaleChanged()
+    }
+
+    override fun onScaleUpdate() {
+        super.onScaleUpdate()
+        thumbPane.children.forEachIndexed { index, node ->
+                node.layoutX = thumsTimestamp[index] / 1000.0 / 1000.0 * Main.project.fps * TimelineController.pixelPerFrame
+        }
     }
 
     override fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
@@ -178,26 +199,55 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
         return byteBuffer.array()
     }
 
-    fun FFmpegFrameGrabber.fastSeek(timestamp : Long):Frame?{
+    fun FFmpegFrameGrabber.fastSeek(timestamp: Long): Frame? {
 
         var beforeTimestamp = 0L
-        while(this.timestamp < timestamp - 1000*1000*10){
+        while (this.timestamp < timestamp - 1000 * 1000 * 10) {
             beforeTimestamp = this.timestamp
             grabKeyFrame()
             println("key")
         }
 
-        if(this.timestamp > timestamp)
+        if (this.timestamp > timestamp)
             this.timestamp = beforeTimestamp
 
 
-        var frame : Frame? = null
-        while (this.timestamp < timestamp)
-        {
-               frame = grabImage()
+        var frame: Frame? = null
+        while (this.timestamp < timestamp) {
+            frame = grabImage()
             println("f")
         }
 
         return frame
+    }
+
+    fun renderThumbs() {
+        while (true) {
+            val frame = grabber?.grabKeyFrame() ?: break
+            val mat = Mat(frame.imageHeight, frame.imageWidth, CvType.CV_8UC3, frame.image[0] as ByteBuffer)
+            val small = Mat(30, ((30.0/frame.imageHeight) * frame.imageWidth).toInt(), CvType.CV_8UC3)
+
+
+            Imgproc.resize(mat, small, Size(small.width().toDouble(),small.height().toDouble()))
+            Imgproc.cvtColor(small,small,Imgproc.COLOR_RGB2BGR)
+            val image = WritableImage(small.width(),small.height())
+            val buf = ByteArray((image.width * image.height * 3).toInt())
+            small.get(0, 0, buf)
+            image.pixelWriter.setPixels(0, 0, image.width.toInt(), image.height.toInt(), PixelFormat.getByteRgbInstance(), buf, 0, (image.width * 3).toInt())
+            val view = ImageView(image)
+            val thumbFrame = (grabber?.timestamp ?:0L) / 1000.0 / 1000.0 * Main.project.fps
+            thumsTimestamp.add(grabber?.timestamp ?: 0)
+            view.layoutX = thumbFrame * TimelineController.pixelPerFrame
+            view.cursor = Cursor.HAND
+            view.setOnMouseClicked {
+                uiObject?.timelineController?.seekTo(thumbFrame.toInt())
+            }
+            thumbPane.children.add(view)
+            println(grabber?.timestamp)
+        }
+        grabber?.timestamp = 0L
+        Platform.runLater {
+            uiObject?.headerPane?.children?.add(0,thumbPane)
+        }
     }
 }

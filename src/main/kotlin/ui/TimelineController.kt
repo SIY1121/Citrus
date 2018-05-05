@@ -352,6 +352,10 @@ class TimelineController : Initializable {
         projectRenderer.updateObject()
     }
 
+    fun seekTo(frame: Int){
+        caret.layoutX = frame * pixelPerFrame
+    }
+
     private fun drawAxis() {
         val g = timelineAxis.graphicsContext2D
         g.clearRect(0.0, 0.0, g.canvas.width, g.canvas.height)
