@@ -24,6 +24,7 @@
 }
 .menu{
     -fx-background-color: #505050;
+    -fx-border-width: 0;
 }
 .menu:showing,.menu-:hover{
     -fx-background-color: #151515;
@@ -71,8 +72,8 @@
 .slider .track{
     -fx-background-color: #808080;
     -fx-border-color: #909090;
-    -fx-border-radius: 5;
-    -fx-pref-height: 8;
+    -fx-border-radius: 4;
+    -fx-pref-height: 4;
 }
 .slider .thumb{
     -fx-background-color: #454545;

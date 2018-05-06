@@ -2,12 +2,13 @@
 
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.effect.Reflection?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="360" prefWidth="600" stylesheets="/layout/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.SplashController">
+<AnchorPane prefHeight="360" prefWidth="600" style="-fx-background-color: #151515;" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.SplashController">
       <ImageView fitHeight="400.0" fitWidth="600.0" pickOnBounds="true" preserveRatio="true">
             <Image url="@../img/cit_sp_trans.png" />
       </ImageView>
@@ -20,5 +21,8 @@
    <Label fx:id="messageLabel" alignment="CENTER_RIGHT" prefHeight="17.0" prefWidth="372.0" text="起動しています..." textAlignment="RIGHT" textFill="WHITE" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0">
       <font>
          <Font name="System Bold" size="16.0" />
-      </font></Label>
+      </font>
+      <effect>
+         <Reflection />
+      </effect></Label>
 </AnchorPane>
