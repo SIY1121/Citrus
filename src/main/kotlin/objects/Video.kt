@@ -14,6 +14,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
 import javafx.scene.layout.Pane
+import javafx.scene.shape.Rectangle
 import javafx.stage.FileChooser
 import kotlinx.coroutines.experimental.launch
 import mod.FFmpegFrameGrabberMod
@@ -62,6 +63,8 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
     var thumbPane = Pane()
 
     var thumsTimestamp: MutableList<Long> = ArrayList()
+
+    var rect = Rectangle()
 
     init {
         file.valueProperty.addListener { _, _, n -> onFileLoad(n.toString()) }
@@ -261,11 +264,14 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
             }
             thumbPane.children.add(view)
         }
-        println("end thumb")
         grabber?.timestamp = 0L
         Platform.runLater {
+            rect.height = 30.0
+            uiObject?.widthProperty()?.addListener{_,_,n->
+                rect.width = n.toDouble()
+            }
             uiObject?.headerPane?.children?.add(0, thumbPane)
+            thumbPane.clip = rect
         }
-        println("end all")
     }
 }
