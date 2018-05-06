@@ -7,6 +7,7 @@ import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import javafx.application.Platform
 import javafx.scene.Cursor
+import javafx.scene.canvas.Canvas
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
 import javafx.scene.image.ImageView
@@ -15,8 +16,10 @@ import javafx.scene.image.WritableImage
 import javafx.scene.layout.Pane
 import javafx.stage.FileChooser
 import kotlinx.coroutines.experimental.launch
+import mod.FFmpegFrameGrabberMod
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
+import org.opencv.core.Core
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.Size
@@ -58,7 +61,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
 
     var thumbPane = Pane()
 
-    var thumsTimestamp : MutableList<Long> = ArrayList()
+    var thumsTimestamp: MutableList<Long> = ArrayList()
 
     init {
         file.valueProperty.addListener { _, _, n -> onFileLoad(n.toString()) }
@@ -76,7 +79,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
         launch {
             //デコーダ準備
             grabber = FFmpegFrameGrabber(file)
-            grabber?.setVideoOption("threads","0")
+            grabber?.setVideoOption("threads", "0")
             grabber?.start()
             if (grabber?.videoCodec == 0) {
                 Platform.runLater {
@@ -143,7 +146,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
     override fun onScaleUpdate() {
         super.onScaleUpdate()
         thumbPane.children.forEachIndexed { index, node ->
-                node.layoutX = thumsTimestamp[index] / 1000.0 / 1000.0 * Main.project.fps * TimelineController.pixelPerFrame
+            node.layoutX = thumsTimestamp[index] / 1000.0 / 1000.0 * Main.project.fps * TimelineController.pixelPerFrame
         }
     }
 
@@ -171,6 +174,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
                 while (grabber?.timestamp ?: 0 <= now && buf != null) {
                     buf = grabber?.grabImage()
                 }
+
                 gl.glTexSubImage2D(GL.GL_TEXTURE_2D, 0, 0, 0, buf?.imageWidth ?: 0, buf?.imageHeight
                         ?: 0, GL.GL_BGR, GL2.GL_UNSIGNED_BYTE, buf?.image?.get(0))
             }
@@ -224,30 +228,44 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
     fun renderThumbs() {
         while (true) {
             val frame = grabber?.grabKeyFrame() ?: break
+            println(grabber?.timestamp)
             val mat = Mat(frame.imageHeight, frame.imageWidth, CvType.CV_8UC3, frame.image[0] as ByteBuffer)
-            val small = Mat(30, ((30.0/frame.imageHeight) * frame.imageWidth).toInt(), CvType.CV_8UC3)
+            val small = Mat(30, ((30.0 / frame.imageHeight) * frame.imageWidth).toInt(), CvType.CV_8UC3)
 
 
-            Imgproc.resize(mat, small, Size(small.width().toDouble(),small.height().toDouble()))
-            Imgproc.cvtColor(small,small,Imgproc.COLOR_RGB2BGR)
-            val image = WritableImage(small.width(),small.height())
-            val buf = ByteArray((image.width * image.height * 3).toInt())
+            Imgproc.resize(mat, small, Size(small.width().toDouble(), small.height().toDouble()))
+            Imgproc.cvtColor(small, small, Imgproc.COLOR_BGR2BGRA)
+
+            for (x in 0 until small.width()) {
+                val a = (Math.min(1.0, (3.0 - (x.toDouble() / small.width()) * 3)) * 255).toByte()
+                for (y in 0 until small.height()) {
+                    val p = ByteArray(4)
+                    small.get(y, x, p)
+                    small.put(y, x, byteArrayOf(p[0], p[1], p[2], a))
+                }
+            }
+
+
+            val image = WritableImage(small.width(), small.height())
+            val buf = ByteArray((image.width * image.height * 4).toInt())
             small.get(0, 0, buf)
-            image.pixelWriter.setPixels(0, 0, image.width.toInt(), image.height.toInt(), PixelFormat.getByteRgbInstance(), buf, 0, (image.width * 3).toInt())
+            image.pixelWriter.setPixels(0, 0, image.width.toInt(), image.height.toInt(), PixelFormat.getByteBgraInstance(), buf, 0, (image.width * 4).toInt())
             val view = ImageView(image)
-            val thumbFrame = (grabber?.timestamp ?:0L) / 1000.0 / 1000.0 * Main.project.fps
+            val thumbFrame = (grabber?.timestamp ?: 0L) / 1000.0 / 1000.0 * Main.project.fps
             thumsTimestamp.add(grabber?.timestamp ?: 0)
             view.layoutX = thumbFrame * TimelineController.pixelPerFrame
             view.cursor = Cursor.HAND
+            view.style = "linear-gradient(to left right, #FFFFFFFF, #FFFFFF00)"
             view.setOnMouseClicked {
                 uiObject?.timelineController?.seekTo(thumbFrame.toInt())
             }
             thumbPane.children.add(view)
-            println(grabber?.timestamp)
         }
+        println("end thumb")
         grabber?.timestamp = 0L
         Platform.runLater {
-            uiObject?.headerPane?.children?.add(0,thumbPane)
+            uiObject?.headerPane?.children?.add(0, thumbPane)
         }
+        println("end all")
     }
 }
