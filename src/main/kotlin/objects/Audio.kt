@@ -159,7 +159,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                     val result = FloatArray(requiredSamples)
                     var readed = 0
 
-                    if (Math.abs(frame - oldFrame) >= 100 || frame < oldFrame) {
+                    if (Math.abs(frame + startPos.value.toInt() - oldFrame) >= 100 || frame + startPos.value.toInt() < oldFrame) {
                         TimelineController.wait = true
                         grabber?.sampleMode = FrameGrabber.SampleMode.FLOAT
                         grabber?.timestamp = now - (1.0 / Main.project.fps * 1000 * 1000).toLong()
@@ -188,7 +188,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         return FloatArray(0)
     }
 
-    private fun cacheWaveData(dialog : Stage) {
+    private fun cacheWaveData(dialog: Stage) {
         val progressBar = dialog.scene.lookup("#progressBar") as ProgressBar
         waveFormCanvas.height = 30.0
         waveLevelData = ByteArray(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution).toInt())
@@ -231,13 +231,15 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                 read += (s.position() - old)
             }
             buffer = grabber?.grabSamples()
-            progressBar.progress = (grabber?.timestamp?:0L)/(grabber?.lengthInTime?:1L).toDouble()
+            Platform.runLater {
+                progressBar.progress = (grabber?.timestamp ?: 0L) / (grabber?.lengthInTime ?: 1L).toDouble()
+            }
         }
         grabber?.timestamp = 0L
 
     }
 
-    private fun setupWaveformCanvas(){
+    private fun setupWaveformCanvas() {
         Platform.runLater {
             uiObject?.timelineController?.hScrollBar?.valueProperty()?.addListener({ _, _, _ ->
                 renderWaveform()
@@ -290,7 +292,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         }
     }
 
-    private fun fitUIObjectSize(){
+    private fun fitUIObjectSize() {
         if (end - start > audioLength - startPos.value.toInt())
             end = start + audioLength - startPos.value.toInt()
 

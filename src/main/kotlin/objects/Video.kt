@@ -151,7 +151,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
     override fun onScaleUpdate() {
         super.onScaleUpdate()
         thumbPane.children.forEachIndexed { index, node ->
-            node.layoutX = thumsTimestamp[index] / 1000.0 / 1000.0 * Main.project.fps * TimelineController.pixelPerFrame
+            node.layoutX = (thumsTimestamp[index] / 1000.0 / 1000.0 * Main.project.fps - startPos.value.toInt()) * TimelineController.pixelPerFrame
         }
     }
 
@@ -235,7 +235,9 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
         while (true) {
             val frame = grabber?.grabKeyFrame() ?: break
             println(grabber?.timestamp)
-            Platform.runLater { progressBar.progress = (grabber?.timestamp ?: 0L) / (grabber?.lengthInTime?:1L).toDouble() }
+            Platform.runLater {
+                progressBar.progress = (grabber?.timestamp ?: 0L) / (grabber?.lengthInTime ?: 1L).toDouble()
+            }
             val mat = Mat(frame.imageHeight, frame.imageWidth, CvType.CV_8UC3, frame.image[0] as ByteBuffer)
             val small = Mat(30, ((30.0 / frame.imageHeight) * frame.imageWidth).toInt(), CvType.CV_8UC3)
 
@@ -260,20 +262,22 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
             val view = ImageView(image)
             val thumbFrame = (grabber?.timestamp ?: 0L) / 1000.0 / 1000.0 * Main.project.fps
             thumsTimestamp.add(grabber?.timestamp ?: 0)
-            view.layoutX = thumbFrame * TimelineController.pixelPerFrame
+            view.layoutX = (thumbFrame - startPos.value.toInt()) * TimelineController.pixelPerFrame
             view.cursor = Cursor.HAND
             view.style = "linear-gradient(to left right, #FFFFFFFF, #FFFFFF00)"
             view.setOnMouseClicked {
-                uiObject?.timelineController?.seekTo(thumbFrame.toInt())
+                uiObject?.timelineController?.seekTo(thumbFrame.toInt()-startPos.value.toInt())
             }
             thumbPane.children.add(view)
         }
         grabber?.timestamp = 0L
+        buf = grabber?.grabImage()
         Platform.runLater {
             rect.height = 30.0
             uiObject?.widthProperty()?.addListener { _, _, n ->
                 rect.width = n.toDouble()
             }
+            startPos.valueProperty.addListener { _,_,_->onScaleUpdate() }
             uiObject?.headerPane?.children?.add(0, thumbPane)
             thumbPane.clip = rect
         }

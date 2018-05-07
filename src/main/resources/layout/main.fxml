@@ -37,8 +37,8 @@
                     <AnchorPane fx:id="canvasWrapper">
                         <SwingNode fx:id="glCanvas" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" />
                     </AnchorPane>
-                    <ScrollPane fx:id="rightPaneWrapper">
-                        <AnchorPane fx:id="rightPane" minWidth="150" />
+                    <ScrollPane fx:id="rightPaneWrapper"  minWidth="150" hbarPolicy="NEVER" vbarPolicy="ALWAYS">
+                        <AnchorPane fx:id="rightPane"/>
                     </ScrollPane>
                 </SplitPane>
                 <AnchorPane>

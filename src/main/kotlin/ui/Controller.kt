@@ -73,7 +73,7 @@ class Controller : Initializable {
             volumeBar.height = n.toDouble()
         }
         rightPaneWrapper.widthProperty()?.addListener{_,_,n->
-            rightPane.prefWidth = n.toDouble()
+            rightPane.prefWidth = n.toDouble() - 7.0
         }
         SplashController.notifyProgress(0.7,"OpenGLを初期化中...")
 

@@ -45,7 +45,7 @@
     -fx-border-width: 1;
     -fx-background-radius: 2;
     -fx-border-radius: 2;
-    -fx-border-color: gray;
+    -fx-border-color: #454545;
 }
 .scroll-bar{
     -fx-background-color: #252525;
@@ -63,11 +63,15 @@
     -fx-border-width: 1;
     -fx-padding: 1 1 1 1
 }
-.choice-box{
-    -fx-background-color: #252525;
-    -fx-border-color: #151515;
+.choice-box, .color-picker{
+    -fx-background-color: #404040;
+    -fx-border-color: #454545;
     -fx-border-radius: 2;
     -fx-background-radius: 2;
+}
+.choice-box:showing , .color-picker:showing{
+    -fx-background-color: #353535;
+    -fx-border-color: #404040;
 }
 .slider .track{
     -fx-background-color: #808080;
