@@ -7,10 +7,13 @@ import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
+import javafx.scene.control.ProgressBar
 import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
 import javafx.stage.FileChooser
+import javafx.stage.Stage
 import kotlinx.coroutines.experimental.launch
+import mod.FFmpegFrameGrabberMod
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
 import org.bytedeco.javacv.FrameGrabber
@@ -109,7 +112,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             end = start + audioLength
 
             //波形データ生成
-            cacheWaveData()
+            cacheWaveData(dialog)
             setupWaveformCanvas()
 
             //オーディオ出力準備
@@ -185,7 +188,8 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         return FloatArray(0)
     }
 
-    private fun cacheWaveData() {
+    private fun cacheWaveData(dialog : Stage) {
+        val progressBar = dialog.scene.lookup("#progressBar") as ProgressBar
         waveFormCanvas.height = 30.0
         waveLevelData = ByteArray(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution).toInt())
 
@@ -227,6 +231,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                 read += (s.position() - old)
             }
             buffer = grabber?.grabSamples()
+            progressBar.progress = (grabber?.timestamp?:0L)/(grabber?.lengthInTime?:1L).toDouble()
         }
         grabber?.timestamp = 0L
 

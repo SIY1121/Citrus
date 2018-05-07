@@ -10,12 +10,14 @@ import javafx.scene.Cursor
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
+import javafx.scene.control.ProgressBar
 import javafx.scene.image.ImageView
 import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
 import javafx.scene.layout.Pane
 import javafx.scene.shape.Rectangle
 import javafx.stage.FileChooser
+import javafx.stage.Stage
 import kotlinx.coroutines.experimental.launch
 import mod.FFmpegFrameGrabberMod
 import org.bytedeco.javacv.FFmpegFrameGrabber
@@ -122,7 +124,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
                 println("allocate ${grabber?.imageWidth}x${grabber?.imageHeight}")
                 false
             })
-            renderThumbs()
+            renderThumbs(dialog)
             Platform.runLater {
                 dialog.close()
                 uiObject?.onScaleChanged()
@@ -228,10 +230,12 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
         return frame
     }
 
-    fun renderThumbs() {
+    fun renderThumbs(dialog: Stage) {
+        val progressBar = dialog.scene.lookup("#progressBar") as ProgressBar
         while (true) {
             val frame = grabber?.grabKeyFrame() ?: break
             println(grabber?.timestamp)
+            Platform.runLater { progressBar.progress = (grabber?.timestamp ?: 0L) / (grabber?.lengthInTime?:1L).toDouble() }
             val mat = Mat(frame.imageHeight, frame.imageWidth, CvType.CV_8UC3, frame.image[0] as ByteBuffer)
             val small = Mat(30, ((30.0 / frame.imageHeight) * frame.imageWidth).toInt(), CvType.CV_8UC3)
 
@@ -267,7 +271,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
         grabber?.timestamp = 0L
         Platform.runLater {
             rect.height = 30.0
-            uiObject?.widthProperty()?.addListener{_,_,n->
+            uiObject?.widthProperty()?.addListener { _, _, n ->
                 rect.width = n.toDouble()
             }
             uiObject?.headerPane?.children?.add(0, thumbPane)
