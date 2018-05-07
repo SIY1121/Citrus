@@ -517,6 +517,7 @@ class TimelineController : Initializable {
 
         if (selectedObjects.isNotEmpty()) {
             projectRenderer.updateObject()
+            projectRenderer.renderPreview(currentFrame)
             //println("${glCanvas.currentObjects.size}")
         }
 

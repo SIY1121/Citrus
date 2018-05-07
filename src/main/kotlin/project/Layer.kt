@@ -20,8 +20,14 @@ class Layer : ArrayList<CitrusObject>(), Drawable, AudioSampleProvider {
         } else if (currentObject?.isActive(frame) == false) {
             currentObject = null
             currentObject = firstOrNull { it.isActive(frame) }
+            val a = currentObject
+            if (a is AudioSampleProvider)
+                return a.getSamples(frame - a.start)
         } else {
             currentObject = firstOrNull { it.isActive(frame) }
+            val a = currentObject
+            if (a is AudioSampleProvider)
+                return a.getSamples(frame - a.start)
         }
         return FloatArray(0)
     }
@@ -33,8 +39,12 @@ class Layer : ArrayList<CitrusObject>(), Drawable, AudioSampleProvider {
         } else if (currentObject?.isActive(frame) == false) {
             currentObject = null
             currentObject = firstOrNull { it.isActive(frame) }
+            val d = currentObject
+            if (d is Drawable) d.draw(gl, mode, frame - d.start)
         } else {
             currentObject = firstOrNull { it.isActive(frame) }
+            val d = currentObject
+            if (d is Drawable) d.draw(gl, mode, frame - d.start)
         }
     }
 }

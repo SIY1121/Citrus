@@ -39,6 +39,8 @@ class Controller : Initializable {
     lateinit var canvasWrapper : Pane
     @FXML
     lateinit var rightPane : AnchorPane
+    @FXML
+    lateinit var rightPaneWrapper : ScrollPane
 
     @FXML
     lateinit var volumeBar: Canvas
@@ -70,7 +72,9 @@ class Controller : Initializable {
         volumeBarWrapper.heightProperty().addListener { _, _, n ->
             volumeBar.height = n.toDouble()
         }
-
+        rightPaneWrapper.widthProperty()?.addListener{_,_,n->
+            rightPane.prefWidth = n.toDouble()
+        }
         SplashController.notifyProgress(0.7,"OpenGLを初期化中...")
 
     }
