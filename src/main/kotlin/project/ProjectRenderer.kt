@@ -9,10 +9,7 @@ import org.bytedeco.javacpp.avcodec
 import org.bytedeco.javacv.FFmpegFrameRecorder
 import ui.Main
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.IntBuffer
-import java.nio.ShortBuffer
+import java.nio.*
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
@@ -63,14 +60,14 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         val samples = project.scene[selectedScene].getSamples(frame)
 
         launch {
-            val data = samples.toByteArray()
+            val data = samples.map { Math.min(it*Short.MAX_VALUE,Short.MAX_VALUE.toFloat()).toShort() }.toShortArray().toByteArray()
             audioLine.write(data, 0, data.size)
         }
 
-        leftAudioLevel = Math.log(samples.filterIndexed { index, _ -> index % 2 == 0 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.average()
-                ?: 0.01) * 20
-        rightAudioLevel = Math.log(samples.filterIndexed { index, _ -> index % 2 == 1 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.average()
-                ?: 0.01) * 20
+        leftAudioLevel = (samples.filterIndexed { index, _ -> index % 2 == 0 }.map { Math.abs(it.toDouble())}.max()
+                ?: 0.0)
+        rightAudioLevel = (samples.filterIndexed { index, _ -> index % 2 == 1 }.map { Math.abs(it.toDouble())}.max()
+                ?: 0.0)
     }
 
     fun startEncode(infoCallcack: EncodingInfoCallback) {
@@ -93,7 +90,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
                 glPanel?.display()
 
                 val samples = project.scene[selectedScene].getSamples(frame)
-                val buf = ShortBuffer.allocate(samples.size).put(samples)
+                val buf = FloatBuffer.allocate(samples.size).put(samples)
                 buf.position(0)
                 recorder?.recordSamples(project.sampleRate, project.audioChannel, buf)
 
@@ -116,7 +113,11 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     }
 
     fun updateObject() {
-
+        project.scene.forEach { scene->
+            scene.forEach {
+                it.currentObject = null
+            }
+        }
     }
 
     private var frameBufID = 0
