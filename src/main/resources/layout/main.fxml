@@ -12,6 +12,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.shape.Rectangle?>
 
+<?import javafx.scene.control.ScrollPane?>
 <Pane fx:id="rootPane" prefHeight="500.0" prefWidth="500.0" stylesheets="/layout/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.Controller">
     <BorderPane fx:id="borderPane" prefHeight="500.0" prefWidth="500.0">
         <top>
@@ -36,9 +37,9 @@
                     <AnchorPane fx:id="canvasWrapper">
                         <SwingNode fx:id="glCanvas" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" />
                     </AnchorPane>
-
-
-                    <AnchorPane fx:id="rightPane" minWidth="150" />
+                    <ScrollPane fx:id="rightPaneWrapper"  minWidth="150" hbarPolicy="NEVER" vbarPolicy="ALWAYS">
+                        <AnchorPane fx:id="rightPane"/>
+                    </ScrollPane>
                 </SplitPane>
                 <AnchorPane>
                     <fx:include fx:id="timeline" source="timeline.fxml" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="80" AnchorPane.topAnchor="0" />

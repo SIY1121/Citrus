@@ -113,7 +113,11 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     }
 
     fun updateObject() {
-
+        project.scene.forEach { scene->
+            scene.forEach {
+                it.currentObject = null
+            }
+        }
     }
 
     private var frameBufID = 0
