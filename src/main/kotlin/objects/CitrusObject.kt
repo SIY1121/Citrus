@@ -95,9 +95,19 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
             field = value
         }
 
+    /**
+     * アニメーション可能なプロパティを抜き出す
+     */
     val pList: List<KProperty1<CitrusObject, *>> = this.javaClass.kotlin.memberProperties.filter {
         println(it.name + " " + it.returnType)
         it.annotations.any { it is CProperty } && Class.forName(it.returnType.toString()).interfaces.any { it.name == "properties.CitrusAnimatableProperty" }
+    }
+
+    fun updateAnimationProperty(frame : Int){
+        pList.forEach {
+            val v = it.get(this)
+            if(v is CitrusAnimatableProperty<*>)v.frame = frame
+        }
     }
 
     init {

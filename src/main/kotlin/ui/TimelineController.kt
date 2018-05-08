@@ -447,7 +447,7 @@ class TimelineController : Initializable {
         dragging = true
 
         if (selectedObjects.isEmpty() && mouseEvent.button == MouseButton.PRIMARY) {
-            parentController.rightPane.children.clear()
+            //parentController.rightPane.children.clear()
             caret.layoutX = mouseEvent.x
         }
     }

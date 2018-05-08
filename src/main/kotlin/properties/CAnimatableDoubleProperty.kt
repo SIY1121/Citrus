@@ -1,13 +1,19 @@
 package properties
 
 import interpolation.BounceInterpolator
+import javafx.application.Platform
+import javafx.geometry.Insets
 import javafx.scene.input.KeyEvent
+import javafx.scene.layout.Background
+import javafx.scene.layout.BackgroundFill
+import javafx.scene.layout.CornerRadii
+import javafx.scene.paint.Color
 import ui.CustomSlider
 
 /**
  * 数値をアニメーションできるプロパティ
  */
-class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Double = Double.POSITIVE_INFINITY, def: Double = 0.0,tick:Double = 0.1) : CDoubleProperty(min,max,def,tick), CitrusAnimatableProperty<Number> {
+class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Double = Double.POSITIVE_INFINITY, def: Double = 0.0, tick: Double = 0.1) : CDoubleProperty(min, max, def, tick), CitrusAnimatableProperty<Number> {
 
     private val _keyFrames: MutableList<KeyFrame<Number>> = ArrayList()
     override val keyFrames: MutableList<KeyFrame<Number>>
@@ -25,6 +31,10 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
                     keyFrames.size - 1 -> keyFrames.last().value
                     else -> keyFrames[index].value.toDouble() + ((keyFrames[index + 1].value.toDouble() - keyFrames[index].value.toDouble()) * keyFrames[index].interpolator.getInterpolation((frame.toDouble() - keyFrames[index].frame) / (keyFrames[index + 1].frame - keyFrames[index].frame)))
                 }
+                if (isKeyFrame(frame))
+                    Platform.runLater{uiNode.style = "-fx-background-color:yellow"}
+                else
+                    Platform.runLater{uiNode.style = ""}
             }
         }
 
