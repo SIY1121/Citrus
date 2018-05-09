@@ -20,6 +20,7 @@ import javafx.scene.shape.Line
 import javafx.scene.shape.Polygon
 import javafx.scene.shape.Rectangle
 import javafx.scene.text.Font
+import kotlinx.coroutines.experimental.launch
 import objects.CitrusObject
 import objects.ObjectManager
 import project.Layer
@@ -63,12 +64,12 @@ class TimelineController : Initializable {
 
     var currentFrame = 0
         set(value) {
-            if (field != value) {
+            //if (field != value) {
                 field = value
                 projectRenderer.renderPreview(field)
                 Platform.runLater { drawVolumeBar() }
 
-            }
+            //}
         }
 
     var parentController: Controller = Controller()
@@ -313,7 +314,7 @@ class TimelineController : Initializable {
         val layerPane = layerVBox.children[layerIndex] as Pane
 
         val cObject = clazz.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(layerIndex, selectedScene) as CitrusObject
-
+        cObject.setupProperties()
         val o = TimeLineObject(cObject, this)
         o.prefHeight = layerHeight * 2
         o.style = "-fx-background-color:#${o.color.darker().toString().substring(2)};"
@@ -352,7 +353,7 @@ class TimelineController : Initializable {
         projectRenderer.updateObject()
     }
 
-    fun seekTo(frame: Int){
+    fun seekTo(frame: Int) {
         caret.layoutX = frame * pixelPerFrame
     }
 
@@ -400,7 +401,7 @@ class TimelineController : Initializable {
         g.stroke = Color.WHITE
         g.font = Font.font(9.0)
         for (i in 0..60) {
-            if (i % 6 == 0){
+            if (i % 6 == 0) {
                 g.fillText("-${i}dB", 56.0, (i / 60.0) * canvas.height + g.font.size)
                 g.strokeLine(51.0, (i / 60.0) * canvas.height, 55.0, (i / 60.0) * canvas.height)
             }
@@ -603,11 +604,20 @@ class TimelineController : Initializable {
     }
 
     var playing = false
+    var fpsCount = 0
+    var time = 0L
     fun play() {
+        val timer = Timer(true)
+        timer.schedule(object : TimerTask(){
+            override fun run() {
+                println("fps:$fpsCount")
+                fpsCount=0
+            }
+        },1000,1000)
         playing = true
         val start = System.currentTimeMillis()
         val startFrame = currentFrame
-        Thread({
+        launch {
             var o = System.currentTimeMillis()
             var left = 0.0
             while (playing) {
@@ -617,15 +627,22 @@ class TimelineController : Initializable {
 
                 left = 1.0 / Main.project.fps * 1000.0 - (System.currentTimeMillis() - o)
 
-                if (left > 0)
-                    Thread.sleep(left.toLong())
+
+                Thread.sleep(Math.max(left.toLong()-2, 0L))
                 //else
                 //    start-=left.toInt() フレームスキップを行わない場合
-
-
+//                if (fpsCount == 60) {
+//                    println(1000.0/(time/fpsCount))
+//                    fpsCount = 0
+//                    time = 0
+//                }
+                time += System.currentTimeMillis() - o
+                fpsCount++
                 o = System.currentTimeMillis()
             }
-        }).start()
+            timer.cancel()
+            fpsCount=0
+        }
     }
 
     fun stop() {

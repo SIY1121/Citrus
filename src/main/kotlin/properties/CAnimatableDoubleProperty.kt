@@ -1,5 +1,6 @@
 package properties
 
+import interpolation.AccelerateDecelerateInterpolator
 import interpolation.BounceInterpolator
 import javafx.application.Platform
 import javafx.geometry.Insets
@@ -32,9 +33,12 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
                     else -> keyFrames[index].value.toDouble() + ((keyFrames[index + 1].value.toDouble() - keyFrames[index].value.toDouble()) * keyFrames[index].interpolator.getInterpolation((frame.toDouble() - keyFrames[index].frame) / (keyFrames[index + 1].frame - keyFrames[index].frame)))
                 }
                 if (isKeyFrame(frame))
-                    Platform.runLater{uiNode.style = "-fx-background-color:yellow"}
+                    Platform.runLater{uiNode.displayMode = CustomSlider.DisplayMode.KeyFrame}
+                else if(keyFrames.size>0)
+                    Platform.runLater{uiNode.displayMode = CustomSlider.DisplayMode.NotKeyFrame}
                 else
-                    Platform.runLater{uiNode.style = ""}
+                    Platform.runLater{uiNode.displayMode = CustomSlider.DisplayMode.None}
+
             }
         }
 
@@ -44,9 +48,10 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
                 if (isKeyFrame(frame)) {
                     keyFrames[getKeyFrameIndex(frame)].value = uiNode.value
                 } else {
-                    keyFrames.add(KeyFrame(frame, uiNode.value, BounceInterpolator()))
+                    keyFrames.add(KeyFrame(frame, uiNode.value, AccelerateDecelerateInterpolator()))
                     println("add $frame $value")
                     keyFrames.sortBy { it.frame }
+                    Platform.runLater { uiNode.displayMode = CustomSlider.DisplayMode.KeyFrame }
                 }
             }
         }

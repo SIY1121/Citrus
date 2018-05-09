@@ -237,6 +237,15 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             grid.columnConstraints[1].hgrow = Priority.ALWAYS
             editWindowRoot.children.add(accordion)
         }
+
+        cObject.propertyChangedListener = object : CitrusObject.PropertyChangedListener{
+            override fun onPropertyChanged() {
+                println("property changed")
+                if(!timelineController.playing)
+                timelineController.currentFrame = timelineController.currentFrame
+            }
+        }
+
         setupMenu()
     }
 

@@ -14,10 +14,7 @@ import javafx.scene.control.TextField
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.ColumnConstraints
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.Pane
-import javafx.scene.layout.Priority
+import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import java.awt.Robot
 import java.net.URL
@@ -25,6 +22,20 @@ import java.util.*
 
 
 class CustomSlider : Pane() {
+
+    enum class DisplayMode {
+        None, KeyFrame, NotKeyFrame
+    }
+
+    var displayMode = DisplayMode.None
+        set(value){
+            field = value
+            style = when(field){
+                DisplayMode.None -> ""
+                DisplayMode.KeyFrame -> "-fx-background-color:yellow"
+                DisplayMode.NotKeyFrame -> "-fx-background-color:orange"
+            }
+        }
 
     val valueProperty = SimpleDoubleProperty()
     var min = Double.NEGATIVE_INFINITY
@@ -112,7 +123,6 @@ class CustomSlider : Pane() {
             else -> valueProperty.set(valueProperty.value + (it.screenX - oldX) * tick)
         }
 
-        textField.style = "-fx-background-color:#cecece"
         valueLabel.textFill = Color.WHITE
         dragged = true
         oldX = it.screenX
@@ -127,7 +137,6 @@ class CustomSlider : Pane() {
         if (dragged) {
             robot.mouseMove(px.toInt(), py.toInt())
             scene.cursor = Cursor.DEFAULT
-            textField.style = ""
             valueLabel.textFill = Color.LIGHTGRAY
         }
     }
@@ -156,9 +165,8 @@ class CustomSlider : Pane() {
         textField.prefWidthProperty().bind(widthProperty())
         textField.prefHeightProperty().bind(heightProperty())
         textField.isDisable = true
+        percentIndicator.background = Background(BackgroundFill(Color(0.2, 0.2, 0.2, 0.5), CornerRadii(3.0), Insets(0.0)))
         children.add(textField)
-
-        percentIndicator.style = "-fx-background-color:#444444;-fx-background-radius:3;"
 
         children.add(percentIndicator)
 
