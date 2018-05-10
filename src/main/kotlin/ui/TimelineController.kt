@@ -64,12 +64,12 @@ class TimelineController : Initializable {
 
     var currentFrame = 0
         set(value) {
-            //if (field != value) {
+            if (field != value) {
                 field = value
                 projectRenderer.renderPreview(field)
                 Platform.runLater { drawVolumeBar() }
 
-            //}
+            }
         }
 
     var parentController: Controller = Controller()
@@ -628,7 +628,7 @@ class TimelineController : Initializable {
                 left = 1.0 / Main.project.fps * 1000.0 - (System.currentTimeMillis() - o)
 
 
-                Thread.sleep(Math.max(left.toLong()-2, 0L))
+                Thread.sleep(Math.max(left.toLong(), 0L))
                 //else
                 //    start-=left.toInt() フレームスキップを行わない場合
 //                if (fpsCount == 60) {
