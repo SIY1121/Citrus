@@ -16,6 +16,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import objects.*
+import properties.CitrusAnimatableProperty
 import properties.CitrusProperty
 
 
@@ -227,10 +228,16 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             for ((i, pp) in p.property.withIndex()) {
                 val name = (pp.kProprety.annotations.first { it is CProperty } as CProperty).displayName
                 val v = pp.kProprety.get(cObject)
-                if (v is CitrusProperty<*>){
+                if (v is CitrusProperty<*>) {
                     pp.property = v
                     grid.add(Label(name), 0, i)
                     grid.add(v.uiNode, 1, i)
+                    if (v is CitrusAnimatableProperty<*>) {
+                        widthProperty().addListener { _, _, n ->
+                            v.editPane.prefWidth = n.toDouble()
+                        }
+                        children.add(v.editPane)
+                    }
                 }
 
             }
@@ -238,10 +245,10 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             editWindowRoot.children.add(accordion)
         }
 
-        cObject.propertyChangedListener = object : CitrusObject.PropertyChangedListener{
+        cObject.propertyChangedListener = object : CitrusObject.PropertyChangedListener {
             override fun onPropertyChanged() {
-                if(!timelineController.playing)
-                timelineController.projectRenderer.renderPreview(timelineController.currentFrame)
+                if (!timelineController.playing)
+                    timelineController.projectRenderer.renderPreview(timelineController.currentFrame)
             }
         }
 
@@ -351,6 +358,13 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
     fun onScaleChanged() {
         layoutX = cObject.start * TimelineController.pixelPerFrame
         prefWidth = cObject.end * TimelineController.pixelPerFrame - layoutX
+
+        properties.forEach { section->
+            section.property.forEach {
+                val p = it.property
+                (p as? CitrusAnimatableProperty<*>)?.onTimelineScaleChanged()
+            }
+        }
 
 //        for (ps in properties)
 //            for (p in ps.property) {
