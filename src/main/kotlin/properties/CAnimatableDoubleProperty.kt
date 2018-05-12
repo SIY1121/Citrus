@@ -1,17 +1,15 @@
 package properties
 
 import interpolation.AccelerateDecelerateInterpolator
-import interpolation.BounceInterpolator
 import javafx.application.Platform
-import javafx.geometry.Insets
+import javafx.scene.Cursor
 import javafx.scene.input.KeyEvent
-import javafx.scene.layout.Background
-import javafx.scene.layout.BackgroundFill
-import javafx.scene.layout.CornerRadii
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Circle
+import javafx.scene.shape.Rectangle
 import ui.CustomSlider
+import ui.TimeLineObject
 import ui.TimelineController
 
 /**
@@ -56,8 +54,8 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
         }
 
     init {
-        editPane.background = Background(BackgroundFill(Color.BLUE, CornerRadii(0.0), Insets(0.0)))
-        editPane.minHeight = 15.0
+
+        editPane.minHeight = 20.0
 
         uiNode.keyPressedOnHoverListener = object : CustomSlider.KeyPressedOnHover {
             override fun onKeyPressed(it: KeyEvent) {
@@ -68,20 +66,32 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
                     keyFrames.add(k)
                     println("add $frame $value")
                     keyFrames.sortBy { it.frame }
-                    val circle = Circle()
-                    circle.fill = Color.YELLOW
-                    circle.radius = 5.0
-                    circle.layoutX = TimelineController.pixelPerFrame * k.frame
-                    circle.layoutXProperty().addListener { _, _, n ->
-                        k.frame = (n.toDouble() / TimelineController.pixelPerFrame).toInt()
+                    val rect = Rectangle()
+                    rect.cursor = Cursor.HAND
+                    rect.fill = Color.YELLOW
+                    rect.width = 10.0
+                    rect.height = 10.0
+                    rect.rotate = 45.0
+                    rect.translateX = -5.0
+                    rect.layoutY = 5.0
+                    rect.layoutX = TimelineController.pixelPerFrame * k.frame
+                    rect.setOnMouseDragged {
+                        val x = it.sceneX - editPane.localToScene(editPane.layoutBounds).minX
+                        rect.layoutX = (x / TimelineController.pixelPerFrame).toInt() * TimelineController.pixelPerFrame
+                        it.consume()
+                    }
+                    rect.setOnMouseReleased {
+                        k.frame = (rect.layoutX / TimelineController.pixelPerFrame).toInt()
                         keyFrames.sortBy { it.frame }
                     }
-                    circle.setOnMouseDragged {
-                        circle.layoutX = it.sceneX
+                    rect.setOnMouseClicked {
+                        TimelineController.instance.currentFrame = k.frame + (editPane.parent as TimeLineObject).cObject.start
+                        it.consume()
                     }
+
                     Platform.runLater {
                         uiNode.displayMode = CustomSlider.DisplayMode.KeyFrame
-                        editPane.children.add(circle)
+                        editPane.children.add(rect)
                     }
                 }
             }

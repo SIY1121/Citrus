@@ -225,6 +225,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             //p.property.sortWith(Comparator { o1, o2 -> (o1.kProprety.annotations[0] as CitrusProperty).index - (o2.kProprety.annotations[0] as CitrusProperty).index })
             p.property.sortBy { (it.kProprety.annotations.first { it is CProperty } as CProperty).index }
 
+            var animatablePropertyIndex = 0
             for ((i, pp) in p.property.withIndex()) {
                 val name = (pp.kProprety.annotations.first { it is CProperty } as CProperty).displayName
                 val v = pp.kProprety.get(cObject)
@@ -236,8 +237,14 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                         widthProperty().addListener { _, _, n ->
                             v.editPane.prefWidth = n.toDouble()
                         }
+                        v.editPane.background = Background(BackgroundFill(
+                                if(animatablePropertyIndex%2==0)this.color.darker().darker()
+                                else this.color.darker()
+                        ,CornerRadii(0.0),Insets(0.0)))
+
                         children.add(v.editPane)
                     }
+                    animatablePropertyIndex++
                 }
 
             }
