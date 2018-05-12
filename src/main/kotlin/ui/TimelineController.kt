@@ -65,9 +65,14 @@ class TimelineController : Initializable {
     var currentFrame = 0
         set(value) {
             if (field != value) {
-                field = value
+                field = if (value >= 0) value else 0
                 projectRenderer.renderPreview(field)
-                Platform.runLater { drawVolumeBar() }
+                Platform.runLater {
+                    drawVolumeBar()
+                    caret.layoutX = field * pixelPerFrame
+                    topCaret.layoutX = field * pixelPerFrame - offsetX
+                    polygonCaret.layoutX = field * pixelPerFrame - offsetX
+                }
 
             }
         }
@@ -156,22 +161,20 @@ class TimelineController : Initializable {
                     for (o in pane.children) {
                         (o as? TimeLineObject)?.onScaleChanged()
                     }
-
+            caret.layoutX = currentFrame * pixelPerFrame
+            topCaret.layoutX = currentFrame * pixelPerFrame - offsetX
+            polygonCaret.layoutX = currentFrame * pixelPerFrame - offsetX
             drawAxis()
         })
-
-        caret.layoutXProperty().addListener { _, _, n ->
-            topCaret.layoutX = n.toDouble() - offsetX + 1
-        }
-        polygonCaret.layoutXProperty().bind(topCaret.layoutXProperty())
 
         hScrollBar.minProperty().bind(layerScrollPane.hminProperty())
         hScrollBar.maxProperty().bind(layerScrollPane.hmaxProperty())
         layerScrollPane.hvalueProperty().bindBidirectional(hScrollBar.valueProperty())
 
         layerScrollPane.hvalueProperty().addListener({ _, _, n ->
+            topCaret.layoutX = currentFrame * pixelPerFrame - offsetX
+            polygonCaret.layoutX = currentFrame * pixelPerFrame - offsetX
             drawAxis()
-            topCaret.layoutX = caret.layoutX - offsetX + 1
         })
         timelineAxisClipRectangle.widthProperty().bind(timelineAxis.widthProperty())
 
@@ -184,11 +187,9 @@ class TimelineController : Initializable {
                 }
                 KeyCode.RIGHT -> {
                     currentFrame++
-                    caret.layoutX = currentFrame * pixelPerFrame
                 }
                 KeyCode.LEFT -> {
                     currentFrame--
-                    caret.layoutX = currentFrame * pixelPerFrame
                 }
                 KeyCode.DELETE -> {
                     allTimelineObjects.filter { it.strictSelected }.forEach {
@@ -212,16 +213,6 @@ class TimelineController : Initializable {
         hScrollBar.requestLayout()
 
 
-        caret.layoutXProperty().addListener({ _, _, n ->
-            if (!playing)//再生時の多重代入を防ぐ
-                currentFrame = (n.toDouble() / pixelPerFrame).toInt()
-
-            if (topCaret.layoutX >= timelineAxis.width)
-                if (playing) layerScrollPane.hvalue += layerScrollPane.width / (layerVBox.width - layerScrollPane.viewportBounds.width)
-                else layerScrollPane.hvalue += 0.05
-            else if (topCaret.layoutX < 0)
-                layerScrollPane.hvalue -= 0.05
-        })
     }
 
     private fun generateLayer() {
@@ -449,7 +440,7 @@ class TimelineController : Initializable {
 
         if (selectedObjects.isEmpty() && mouseEvent.button == MouseButton.PRIMARY) {
             //parentController.rightPane.children.clear()
-            caret.layoutX = mouseEvent.x
+            currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
         }
     }
 
@@ -502,8 +493,7 @@ class TimelineController : Initializable {
                 }
             }
         else {
-            caret.layoutX = mouseEvent.x
-            if (caret.layoutX < 0) caret.layoutX = 0.0
+            currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
         }
 
     }
@@ -608,12 +598,12 @@ class TimelineController : Initializable {
     var time = 0L
     fun play() {
         val timer = Timer(true)
-        timer.schedule(object : TimerTask(){
+        timer.schedule(object : TimerTask() {
             override fun run() {
                 println("fps:$fpsCount")
-                fpsCount=0
+                fpsCount = 0
             }
-        },1000,1000)
+        }, 1000, 1000)
         playing = true
         val start = System.currentTimeMillis()
         val startFrame = currentFrame
@@ -623,7 +613,6 @@ class TimelineController : Initializable {
             while (playing) {
                 currentFrame = startFrame + ((System.currentTimeMillis() - start) / (1000.0 / Main.project.fps)).toInt()
                 //println("time $left $currentFrame")
-                Platform.runLater { caret.layoutX = currentFrame * pixelPerFrame }
 
                 left = 1.0 / Main.project.fps * 1000.0 - (System.currentTimeMillis() - o)
 
@@ -641,7 +630,7 @@ class TimelineController : Initializable {
                 o = System.currentTimeMillis()
             }
             timer.cancel()
-            fpsCount=0
+            fpsCount = 0
         }
     }
 
@@ -650,20 +639,17 @@ class TimelineController : Initializable {
     }
 
     fun topPaneOnMousePressed(mouseEvent: MouseEvent) {
-        topCaret.layoutX = mouseEvent.x
-        caret.layoutX = mouseEvent.x + offsetX - 1
+       currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
     }
 
     fun topPaneOnMouseDragged(mouseEvent: MouseEvent) {
         if (!wait) {
-            topCaret.layoutX = mouseEvent.x
-            caret.layoutX = mouseEvent.x + offsetX - 1
+            currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
         }
     }
 
     fun topPaneOnMouseReleased(mouseEvent: MouseEvent) {
-        topCaret.layoutX = mouseEvent.x
-        caret.layoutX = mouseEvent.x + offsetX - 1
+        currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
     }
 
     fun Double.toTimeString() = this.toInt().toTimeString()
