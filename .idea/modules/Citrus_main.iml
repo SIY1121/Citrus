@@ -64,8 +64,8 @@
     <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:videoinput-platform:0.200-1.4.1" level="project" />
     <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:artoolkitplus-platform:2.3.1-1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-linux-armv6hf:2.3.2" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-linux-i586:2.3.2" level="project" />
     <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flandmark:1.07-1.4.1" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-linux-i586:2.3.2" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-macosx-universal:2.3.2" level="project" />
     <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flandmark:android-arm:1.07-1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-windows-amd64:2.3.2" level="project" />

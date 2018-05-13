@@ -1,9 +1,14 @@
 package properties
 
 import interpolation.AccelerateDecelerateInterpolator
+import interpolation.Interpolator
+import interpolation.InterpolatorManager
 import javafx.application.Platform
 import javafx.scene.Cursor
+import javafx.scene.control.ContextMenu
+import javafx.scene.control.MenuItem
 import javafx.scene.input.KeyEvent
+import javafx.scene.input.MouseButton
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Circle
@@ -59,6 +64,10 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
 
         uiNode.keyPressedOnHoverListener = object : CustomSlider.KeyPressedOnHover {
             override fun onKeyPressed(it: KeyEvent) {
+                var pa = editPane.parent
+                while (pa !is TimeLineObject)
+                    pa = pa.parent
+
                 if (isKeyFrame(frame)) {
                     keyFrames[getKeyFrameIndex(frame)].value = uiNode.value
                 } else {
@@ -66,6 +75,16 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
                     keyFrames.add(k)
                     println("add $frame $value")
                     keyFrames.sortBy { it.frame }
+
+                    val menu = ContextMenu()
+                    InterpolatorManager.interpolator.forEach { name, clazz ->
+                        val item = MenuItem(name)
+                        item.setOnAction {
+                            k.interpolator = clazz.newInstance() as Interpolator
+                        }
+                        menu.items.add(item)
+                    }
+
                     val rect = Rectangle()
                     rect.cursor = Cursor.HAND
                     rect.fill = Color.YELLOW
@@ -85,8 +104,19 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
                         keyFrames.sortBy { it.frame }
                     }
                     rect.setOnMouseClicked {
-                        TimelineController.instance.currentFrame = k.frame + (editPane.parent as TimeLineObject).cObject.start
-                        it.consume()
+                        when(it.button){
+                            MouseButton.PRIMARY->{
+                                pa.timelineController.currentFrame = k.frame + pa.cObject.start
+                                it.consume()
+                            }
+                            MouseButton.SECONDARY->{
+                                menu.show(rect,it.screenX,it.screenY)
+                                it.consume()
+                            }
+                            else->{
+
+                            }
+                        }
                     }
 
                     Platform.runLater {

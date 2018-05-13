@@ -213,6 +213,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
         //取得したプロパティからUIを生成
         for (p in properties) {
+            //詳細画面
             val grid = GridPane()
             val accordion = TitledPane(p.group, grid)
             grid.columnConstraints.addAll(ColumnConstraints(), ColumnConstraints())
@@ -221,30 +222,52 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             grid.vgap = 10.0
             accordion.isAnimated = false
 
+            //キーフレーム画面
+            val keyVBox = VBox()
+            val keyAccordion = TitledPane(p.group, keyVBox)
+            keyAccordion.minWidth = 0.0
+            keyVBox.padding = Insets(0.0)
+            children.add(keyAccordion)
+
             //CPropertyアノテーションのindexに基づいてソート
-            //p.property.sortWith(Comparator { o1, o2 -> (o1.kProprety.annotations[0] as CitrusProperty).index - (o2.kProprety.annotations[0] as CitrusProperty).index })
             p.property.sortBy { (it.kProprety.annotations.first { it is CProperty } as CProperty).index }
 
             var animatablePropertyIndex = 0
             for ((i, pp) in p.property.withIndex()) {
                 val name = (pp.kProprety.annotations.first { it is CProperty } as CProperty).displayName
                 val v = pp.kProprety.get(cObject)
+
                 if (v is CitrusProperty<*>) {
+                    //詳細画面
                     pp.property = v
                     grid.add(Label(name), 0, i)
                     grid.add(v.uiNode, 1, i)
+
+                    //キーフレーム画面
                     if (v is CitrusAnimatableProperty<*>) {
+                        val wrapperPane = Pane()
+                        val label = Label(name)
                         widthProperty().addListener { _, _, n ->
                             v.editPane.prefWidth = n.toDouble()
+                            wrapperPane.prefWidth = n.toDouble()
                         }
-                        v.editPane.background = Background(BackgroundFill(
-                                if(animatablePropertyIndex%2==0)this.color.darker().darker()
+                        timelineController.layerScrollPane.hvalueProperty().addListener { _, _, _ ->
+                            label.layoutX = Math.max(timelineController.offsetX - layoutX,0.0)
+                        }
+                        wrapperPane.minHeight = v.editPane.minHeight
+                        wrapperPane.background = Background(BackgroundFill(
+                                if (animatablePropertyIndex % 2 == 0) this.color.darker().darker()
                                 else this.color.darker()
-                        ,CornerRadii(0.0),Insets(0.0)))
+                                , CornerRadii(0.0), Insets(0.0)))
 
-                        children.add(v.editPane)
+                        wrapperPane.children.add(label)
+                        wrapperPane.children.add(v.editPane)
+
+
+                        keyVBox.children.add(wrapperPane)
+                        animatablePropertyIndex++
                     }
-                    animatablePropertyIndex++
+
                 }
 
             }
@@ -366,7 +389,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         layoutX = cObject.start * TimelineController.pixelPerFrame
         prefWidth = cObject.end * TimelineController.pixelPerFrame - layoutX
 
-        properties.forEach { section->
+        properties.forEach { section ->
             section.property.forEach {
                 val p = it.property
                 (p as? CitrusAnimatableProperty<*>)?.onTimelineScaleChanged()
