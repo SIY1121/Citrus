@@ -5,8 +5,10 @@ import interpolation.Interpolator
 import interpolation.InterpolatorManager
 import javafx.application.Platform
 import javafx.scene.Cursor
+import javafx.scene.control.CheckMenuItem
 import javafx.scene.control.ContextMenu
 import javafx.scene.control.MenuItem
+import javafx.scene.control.RadioMenuItem
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.Pane
@@ -58,6 +60,8 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
             }
         }
 
+    val defaultInterpolator = AccelerateDecelerateInterpolator::class.java
+
     init {
 
         editPane.minHeight = 20.0
@@ -71,17 +75,25 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
                 if (isKeyFrame(frame)) {
                     keyFrames[getKeyFrameIndex(frame)].value = uiNode.value
                 } else {
-                    val k = KeyFrame<Number>(frame, uiNode.value, AccelerateDecelerateInterpolator())
+                    val k = KeyFrame<Number>(frame, uiNode.value, defaultInterpolator.newInstance())
                     keyFrames.add(k)
                     println("add $frame $value")
                     keyFrames.sortBy { it.frame }
 
                     val menu = ContextMenu()
                     InterpolatorManager.interpolator.forEach { name, clazz ->
-                        val item = MenuItem(name)
+                        val item = RadioMenuItem(name)
                         item.setOnAction {
                             k.interpolator = clazz.newInstance() as Interpolator
+                            menu.items.forEach {
+                                (it as RadioMenuItem).isSelected = false
+                            }
+                            (it.source as RadioMenuItem).isSelected = true
                         }
+
+                        if(clazz == defaultInterpolator)
+                            item.isSelected = true
+
                         menu.items.add(item)
                     }
 
@@ -104,6 +116,7 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
                         keyFrames.sortBy { it.frame }
                     }
                     rect.setOnMouseClicked {
+                        pa.timelineController.layerScrollPane.requestFocus()
                         when(it.button){
                             MouseButton.PRIMARY->{
                                 pa.timelineController.currentFrame = k.frame + pa.cObject.start

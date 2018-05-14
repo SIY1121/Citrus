@@ -251,8 +251,12 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                             v.editPane.prefWidth = n.toDouble()
                             wrapperPane.prefWidth = n.toDouble()
                         }
+                        wrapperPane.setOnMouseClicked {
+                            timelineController.layerScrollPane.requestFocus()
+                            it.consume()
+                        }
                         timelineController.layerScrollPane.hvalueProperty().addListener { _, _, _ ->
-                            label.layoutX = Math.max(timelineController.offsetX - layoutX,0.0)
+                            label.layoutX = Math.max(timelineController.offsetX - layoutX, 0.0)
                         }
                         wrapperPane.minHeight = v.editPane.minHeight
                         wrapperPane.background = Background(BackgroundFill(

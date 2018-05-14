@@ -597,6 +597,7 @@ class TimelineController : Initializable {
     var fpsCount = 0
     var time = 0L
     fun play() {
+        playing = true
         val timer = Timer(true)
         timer.schedule(object : TimerTask() {
             override fun run() {
@@ -604,7 +605,7 @@ class TimelineController : Initializable {
                 fpsCount = 0
             }
         }, 1000, 1000)
-        playing = true
+
         val start = System.currentTimeMillis()
         val startFrame = currentFrame
         launch {
