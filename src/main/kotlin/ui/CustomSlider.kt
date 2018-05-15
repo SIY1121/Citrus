@@ -1,5 +1,6 @@
 package ui
 
+import javafx.application.Platform
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.value.ChangeListener
 import javafx.event.EventHandler
@@ -13,10 +14,7 @@ import javafx.scene.control.TextField
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.ColumnConstraints
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.Pane
-import javafx.scene.layout.Priority
+import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import java.awt.Robot
 import java.net.URL
@@ -25,25 +23,42 @@ import java.util.*
 
 class CustomSlider : Pane() {
 
+    enum class DisplayMode {
+        None, KeyFrame, NotKeyFrame
+    }
+
+    var displayMode = DisplayMode.None
+        set(value){
+            field = value
+            style = when(field){
+                DisplayMode.None -> ""
+                DisplayMode.KeyFrame -> "-fx-background-color:yellow"
+                DisplayMode.NotKeyFrame -> "-fx-background-color:orange"
+            }
+        }
+
     val valueProperty = SimpleDoubleProperty()
     var min = Double.NEGATIVE_INFINITY
     var max = Double.POSITIVE_INFINITY
     var tick = 1.0
     var name = ""
-        set(value){
+        set(value) {
             field = value
             nameLabel.text = field
         }
-    var value : Double
+    var value: Double
         get() = valueProperty.value
-        set(value){
-            valueProperty.set(value)
+        set(value) {
+            //両方向バインドによる無限ループ防止
+            if (valueProperty.value != value)
+                valueProperty.set(value)
         }
 
-    interface KeyPressedOnHover{
-        fun onKeyPressed(it : KeyEvent)
+    interface KeyPressedOnHover {
+        fun onKeyPressed(it: KeyEvent)
     }
-    var keyPressedOnHoverListener  : KeyPressedOnHover? = null
+
+    var keyPressedOnHoverListener: KeyPressedOnHover? = null
 
     private val textField = TextField()
     private val grid = GridPane()
@@ -89,7 +104,7 @@ class CustomSlider : Pane() {
         grid.isVisible = false
         percentIndicator.isVisible = false
         textField.isDisable = false
-        textField.text =  String.format("%.2f",value)
+        textField.text = String.format("%.2f", value)
         textField.requestFocus()
     }
     private val mousePressed = EventHandler<MouseEvent> {
@@ -103,12 +118,11 @@ class CustomSlider : Pane() {
         scene.cursor = Cursor.NONE
         requestFocus()
         when {
-            valueProperty.value + (it.screenX - oldX)*tick > max -> valueProperty.set(max)
-            valueProperty.value + (it.screenX - oldX)*tick < min -> valueProperty.set(min)
-            else -> valueProperty.set(valueProperty.value + (it.screenX - oldX)*tick)
+            valueProperty.value + (it.screenX - oldX) * tick > max -> valueProperty.set(max)
+            valueProperty.value + (it.screenX - oldX) * tick < min -> valueProperty.set(min)
+            else -> valueProperty.set(valueProperty.value + (it.screenX - oldX) * tick)
         }
 
-        textField.style = "-fx-background-color:#cecece"
         valueLabel.textFill = Color.WHITE
         dragged = true
         oldX = it.screenX
@@ -123,7 +137,6 @@ class CustomSlider : Pane() {
         if (dragged) {
             robot.mouseMove(px.toInt(), py.toInt())
             scene.cursor = Cursor.DEFAULT
-            textField.style = ""
             valueLabel.textFill = Color.LIGHTGRAY
         }
     }
@@ -152,9 +165,8 @@ class CustomSlider : Pane() {
         textField.prefWidthProperty().bind(widthProperty())
         textField.prefHeightProperty().bind(heightProperty())
         textField.isDisable = true
+        percentIndicator.background = Background(BackgroundFill(Color(0.2, 0.2, 0.2, 0.5), CornerRadii(3.0), Insets(0.0)))
         children.add(textField)
-
-        percentIndicator.style = "-fx-background-color:#444444;-fx-background-radius:3;"
 
         children.add(percentIndicator)
 
@@ -188,15 +200,15 @@ class CustomSlider : Pane() {
         grid.onKeyPressed = keyPressedPane
 
         valueProperty.addListener({ _, _, n ->
-            valueLabel.text = String.format("%.2f",n.toDouble())
+            Platform.runLater { valueLabel.text = String.format("%.2f", n.toDouble()) }
         })
-        valueProperty.addListener({_,_,n->
-            if(max!=Double.POSITIVE_INFINITY && min!=Double.NEGATIVE_INFINITY)
-                percentIndicator.prefWidth = n.toDouble()/(max-min)*width -2.0
+        valueProperty.addListener({ _, _, n ->
+            if (max != Double.POSITIVE_INFINITY && min != Double.NEGATIVE_INFINITY)
+                percentIndicator.prefWidth = n.toDouble() / (max - min) * width - 2.0
         })
-        widthProperty().addListener { _,_,n->
-            if(max!=Double.POSITIVE_INFINITY && min!=Double.NEGATIVE_INFINITY)
-            percentIndicator.prefWidth = value/(max-min)*n.toDouble() - 2.0
+        widthProperty().addListener { _, _, n ->
+            if (max != Double.POSITIVE_INFINITY && min != Double.NEGATIVE_INFINITY)
+                percentIndicator.prefWidth = value / (max - min) * n.toDouble() - 2.0
         }
         percentIndicator.prefHeightProperty().bind(heightProperty().subtract(2.0))
         percentIndicator.layoutY = 1.0

@@ -13,7 +13,11 @@ import javafx.stage.Screen
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import objects.ObjectManager
+import org.bytedeco.javacpp.Loader
+import org.bytedeco.javacpp.opencv_objdetect
 import org.bytedeco.javacv.FFmpegFrameGrabber
+import org.bytedeco.javacv.JavaCV
+import org.opencv.core.Core
 import project.Project
 
 
@@ -41,6 +45,9 @@ class Main : Application() {
             ObjectManager.load()
             SplashController.notifyProgress(0.3,"FFmpegを初期化中...")
             FFmpegFrameGrabber.tryLoad()
+
+            Loader.load(org.bytedeco.javacpp.opencv_java::class.java)
+            Loader.load(org.bytedeco.javacpp.opencv_core::class.java)
 
             val loader = FXMLLoader(ClassLoader.getSystemResource("layout/main.fxml"))
             val root = loader.load<Parent>()

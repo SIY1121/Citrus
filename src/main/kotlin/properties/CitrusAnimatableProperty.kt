@@ -1,9 +1,22 @@
 package properties
 
+import javafx.scene.layout.Pane
+
 /**
  * キーフレームを実装したプロパティインターフェース
  */
 interface CitrusAnimatableProperty<T>:CitrusProperty<T> {
+
+    /**
+     * キーフレーム編集用のエディットペイン
+     */
+    val editPane : Pane
+
+    /**
+     * タイムラインのスケールが変更されたときに呼び出される
+     */
+    fun onTimelineScaleChanged()
+
     /**
      * フレーム番号
      * セットすることで帰る値が確定する

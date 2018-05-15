@@ -53,14 +53,14 @@ class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
 
     init {
 
-        font.valueProperty.addListener { _, _, _ -> UpdateTexture() }
-        color.valueProperty.addListener { _, _, _ -> UpdateTexture() }
-        isStroke.valueProperty.addListener { _, _, _ -> UpdateTexture() }
-        strokeColor.valueProperty.addListener { _, _, _ -> UpdateTexture() }
-        isShadow.valueProperty.addListener { _, _, _ -> UpdateTexture() }
-        shadowColor.valueProperty.addListener { _, _, _ -> UpdateTexture() }
-        size.valueProperty.addListener { _, _, _ -> UpdateTexture() }
-        text.valueProperty.addListener { _, _, _ -> UpdateTexture() }
+        font.valueProperty.addListener { _, _, _ -> updateTexture() }
+        color.valueProperty.addListener { _, _, _ -> updateTexture() }
+        isStroke.valueProperty.addListener { _, _, _ -> updateTexture() }
+        strokeColor.valueProperty.addListener { _, _, _ -> updateTexture() }
+        isShadow.valueProperty.addListener { _, _, _ -> updateTexture() }
+        shadowColor.valueProperty.addListener { _, _, _ -> updateTexture() }
+        size.valueProperty.addListener { _, _, _ -> updateTexture() }
+        text.valueProperty.addListener { _, _, _ -> updateTexture() }
 
         displayName = "[テキスト]"
         ProjectRenderer.invoke(true, {
@@ -72,12 +72,12 @@ class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
             it.gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
             it.gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
             it.gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
-            Platform.runLater { UpdateTexture() }
+            Platform.runLater { updateTexture() }
             false
         })
     }
 
-    fun UpdateTexture() {
+    private fun updateTexture() {
         t.text = text.value
         t.textAlignment = TextAlignment.CENTER
         t.style = "-fx-background-color:transparent"
@@ -115,7 +115,7 @@ class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
             it.gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, t.boundsInLocal.width.toInt(), t.boundsInLocal.height.toInt()
                     , 0, GL.GL_BGRA, GL.GL_UNSIGNED_BYTE, buf)
             it.gl.glBindTexture(GL.GL_TEXTURE_2D, 0)
-            false
+            true
         })
         displayName = "[テキスト] ${text.value.replace("\n", " ")}"
     }

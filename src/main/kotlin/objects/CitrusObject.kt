@@ -3,6 +3,7 @@ package objects
 import annotation.CProperty
 import effects.Effect
 import properties.CitrusAnimatableProperty
+import properties.CitrusProperty
 import ui.Main
 import ui.TimeLineObject
 import kotlin.reflect.KProperty1
@@ -32,7 +33,13 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
         fun onDisplayNameChanged(name: String)
     }
 
+    interface PropertyChangedListener {
+        fun onPropertyChanged()
+    }
+
     var displayNameChangeListener: DisplayNameChangeListener? = null
+
+    var propertyChangedListener: PropertyChangedListener? = null
 
     /**
      * タイムラインで動かされ終わった時に呼び出される
@@ -95,14 +102,37 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
             field = value
         }
 
-    val pList: List<KProperty1<CitrusObject, *>> = this.javaClass.kotlin.memberProperties.filter {
-        println(it.name + " " + it.returnType)
-        it.annotations.any { it is CProperty } && Class.forName(it.returnType.toString()).interfaces.any { it.name == "properties.CitrusAnimatableProperty" }
+    /**
+     * アニメーション可能なプロパティを抜き出す
+     */
+    val animatableProperties: MutableList<CitrusAnimatableProperty<*>> = ArrayList()
+
+    val allProperties: MutableList<CitrusProperty<*>> = ArrayList()
+
+
+    fun updateAnimationProperty(frame: Int) {
+        animatableProperties.forEach {
+            it.frame = frame
+        }
     }
 
     init {
-        println(pList.size)
         Main.project.scene[scene][layer].add(this)
+    }
+
+    fun setupProperties() {
+        this.javaClass.kotlin.memberProperties.filter {
+            println(it.name + " " + it.returnType)
+            it.annotations.any { it is CProperty } && Class.forName(it.returnType.toString()).interfaces.any { it.name == "properties.CitrusProperty" || it.name == "properties.CitrusAnimatableProperty" }
+        }.forEach {
+            allProperties.add(it.get(this) as CitrusProperty<*>)
+        }
+        allProperties.forEach {
+            if (it is CitrusAnimatableProperty<*>)
+                animatableProperties.add(it)
+            //TODO AnimatableDoublePropertyでユーザーによるイベントの発火かアニメーションによる発火かを見分ける機構が必要
+            it.valueProperty.addListener { _, _, _ -> propertyChangedListener?.onPropertyChanged() }
+        }
     }
 
 }

@@ -3,16 +3,14 @@ package project
 import com.jogamp.opengl.*
 import com.jogamp.opengl.awt.GLJPanel
 import com.jogamp.opengl.glu.GLU
+import com.jogamp.opengl.util.FPSAnimator
 import kotlinx.coroutines.experimental.launch
 import objects.Drawable
 import org.bytedeco.javacpp.avcodec
 import org.bytedeco.javacv.FFmpegFrameRecorder
 import ui.Main
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.IntBuffer
-import java.nio.ShortBuffer
+import java.nio.*
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
@@ -32,10 +30,11 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         set(value) {
             field?.removeGLEventListener(this)
             value?.addGLEventListener(this)
+            value?.gl?.swapInterval = 0
             field = value
         }
 
-    private var frame = 0
+    var frame = 0
 
     lateinit var gl2: GL2
     val glu = GLU()
@@ -55,6 +54,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         audioLine = AudioSystem.getLine(info) as SourceDataLine
         audioLine.open(audioFormat)
         audioLine.start()
+
     }
 
     fun renderPreview(frame: Int) {
@@ -63,14 +63,14 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         val samples = project.scene[selectedScene].getSamples(frame)
 
         launch {
-            val data = samples.toByteArray()
+            val data = samples.map { Math.min(it*Short.MAX_VALUE,Short.MAX_VALUE.toFloat()).toShort() }.toShortArray().toByteArray()
             audioLine.write(data, 0, data.size)
         }
 
-        leftAudioLevel = Math.log(samples.filterIndexed { index, _ -> index % 2 == 0 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.average()
-                ?: 0.01) * 20
-        rightAudioLevel = Math.log(samples.filterIndexed { index, _ -> index % 2 == 1 }.map { Math.abs(it.toDouble()) / Short.MAX_VALUE }.average()
-                ?: 0.01) * 20
+        leftAudioLevel = (samples.filterIndexed { index, _ -> index % 2 == 0 }.map { Math.abs(it.toDouble())}.max()
+                ?: 0.0)
+        rightAudioLevel = (samples.filterIndexed { index, _ -> index % 2 == 1 }.map { Math.abs(it.toDouble())}.max()
+                ?: 0.0)
     }
 
     fun startEncode(infoCallcack: EncodingInfoCallback) {
@@ -83,7 +83,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             recorder?.frameRate = project.fps.toDouble()
             recorder?.sampleRate = project.sampleRate
             recorder?.videoBitrate = 10000000
-            recorder?.videoCodecName = "h264_nvenc"
+            recorder?.videoCodecName = "h264"
             recorder?.audioBitrate = 192_000
             recorder?.audioChannels = project.audioChannel
             recorder?.audioCodec = avcodec.AV_CODEC_ID_AAC
@@ -93,7 +93,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
                 glPanel?.display()
 
                 val samples = project.scene[selectedScene].getSamples(frame)
-                val buf = ShortBuffer.allocate(samples.size).put(samples)
+                val buf = FloatBuffer.allocate(samples.size).put(samples)
                 buf.position(0)
                 recorder?.recordSamples(project.sampleRate, project.audioChannel, buf)
 
@@ -116,7 +116,11 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     }
 
     fun updateObject() {
-
+        project.scene.forEach { scene->
+            scene.forEach {
+                it.currentObject = null
+            }
+        }
     }
 
     private var frameBufID = 0
@@ -150,6 +154,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             gl2.glReadPixels(0, 0, project.width, project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
             recorder?.recordImage(project.width, project.height, 8, 3, project.width * 3, -1, buf)
         }
+
     }
 
     override fun init(drawable: GLAutoDrawable) {
@@ -174,6 +179,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
 
         gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
         gl2.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, GL2.GL_RENDERBUFFER, renderBufID)
+
     }
 
     override fun dispose(drawable: GLAutoDrawable) {
