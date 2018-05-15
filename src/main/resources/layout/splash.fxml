@@ -13,7 +13,7 @@
             <Image url="@../img/cit_sp_trans.png" />
       </ImageView>
       <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0" style="-fx-accent: white; -fx-control-inner-background: FFC001; -fx-text-box-border: FFC001; -fx-indeterminate-bar-length: 100; -fx-indeterminate-bar-animation-time: 2.0;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
-      <Label text="version 0.1.2" textFill="orange" AnchorPane.leftAnchor="180.0" AnchorPane.topAnchor="180.0">
+      <Label text="version 0.1.3" textFill="orange" AnchorPane.leftAnchor="180.0" AnchorPane.topAnchor="180.0">
          <font>
             <Font name="System Bold" size="22.0" />
          </font>
