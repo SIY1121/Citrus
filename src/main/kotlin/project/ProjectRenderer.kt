@@ -3,6 +3,7 @@ package project
 import com.jogamp.opengl.*
 import com.jogamp.opengl.awt.GLJPanel
 import com.jogamp.opengl.glu.GLU
+import com.jogamp.opengl.util.FPSAnimator
 import kotlinx.coroutines.experimental.launch
 import objects.Drawable
 import org.bytedeco.javacpp.avcodec
@@ -29,10 +30,11 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         set(value) {
             field?.removeGLEventListener(this)
             value?.addGLEventListener(this)
+            value?.gl?.swapInterval = 0
             field = value
         }
 
-    private var frame = 0
+    var frame = 0
 
     lateinit var gl2: GL2
     val glu = GLU()
@@ -52,6 +54,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         audioLine = AudioSystem.getLine(info) as SourceDataLine
         audioLine.open(audioFormat)
         audioLine.start()
+
     }
 
     fun renderPreview(frame: Int) {
@@ -80,7 +83,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             recorder?.frameRate = project.fps.toDouble()
             recorder?.sampleRate = project.sampleRate
             recorder?.videoBitrate = 10000000
-            recorder?.videoCodecName = "h264_nvenc"
+            recorder?.videoCodecName = "h264"
             recorder?.audioBitrate = 192_000
             recorder?.audioChannels = project.audioChannel
             recorder?.audioCodec = avcodec.AV_CODEC_ID_AAC
@@ -113,7 +116,11 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     }
 
     fun updateObject() {
-
+        project.scene.forEach { scene->
+            scene.forEach {
+                it.currentObject = null
+            }
+        }
     }
 
     private var frameBufID = 0
@@ -147,6 +154,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             gl2.glReadPixels(0, 0, project.width, project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
             recorder?.recordImage(project.width, project.height, 8, 3, project.width * 3, -1, buf)
         }
+
     }
 
     override fun init(drawable: GLAutoDrawable) {
@@ -171,6 +179,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
 
         gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
         gl2.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, GL2.GL_RENDERBUFFER, renderBufID)
+
     }
 
     override fun dispose(drawable: GLAutoDrawable) {
