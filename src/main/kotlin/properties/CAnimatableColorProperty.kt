@@ -1,11 +1,21 @@
 package properties
 
+import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 
 /**
  * RGB補間でアニメーション可能なプロパティ
  */
 class CAnimatableColorProperty : CColorProperty(), CitrusAnimatableProperty<Color> {
+
+    private val _editPane = Pane()
+    override val editPane: Pane
+        get() = _editPane
+
+    override fun onTimelineScaleChanged() {
+
+    }
+
     private var _frame = 0
     override var frame: Int
         get() = _frame
