@@ -15,6 +15,8 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
 import javax.sound.sampled.SourceDataLine
+import com.jogamp.opengl.GLCapabilities
+
 
 class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     companion object {
@@ -63,13 +65,13 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         val samples = project.scene[selectedScene].getSamples(frame)
 
         launch {
-            val data = samples.map { Math.min(it*Short.MAX_VALUE,Short.MAX_VALUE.toFloat()).toShort() }.toShortArray().toByteArray()
+            val data = samples.map { Math.min(it * Short.MAX_VALUE, Short.MAX_VALUE.toFloat()).toShort() }.toShortArray().toByteArray()
             audioLine.write(data, 0, data.size)
         }
 
-        leftAudioLevel = (samples.filterIndexed { index, _ -> index % 2 == 0 }.map { Math.abs(it.toDouble())}.max()
+        leftAudioLevel = (samples.filterIndexed { index, _ -> index % 2 == 0 }.map { Math.abs(it.toDouble()) }.max()
                 ?: 0.0)
-        rightAudioLevel = (samples.filterIndexed { index, _ -> index % 2 == 1 }.map { Math.abs(it.toDouble())}.max()
+        rightAudioLevel = (samples.filterIndexed { index, _ -> index % 2 == 1 }.map { Math.abs(it.toDouble()) }.max()
                 ?: 0.0)
     }
 
@@ -84,18 +86,75 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             recorder?.sampleRate = project.sampleRate
             recorder?.videoBitrate = 10000000
             recorder?.videoCodecName = "h264"
+            recorder?.setVideoOption("threads","0")
             recorder?.audioBitrate = 192_000
             recorder?.audioChannels = project.audioChannel
             recorder?.audioCodec = avcodec.AV_CODEC_ID_AAC
             recorder?.start()
 
+            val factory = GLDrawableFactory.getFactory(GLProfile.getDefault())
+            val caps = GLCapabilities(GLProfile.getDefault())
+            caps.hardwareAccelerated = true
+            caps.doubleBuffered = false
+            caps.alphaBits = 8
+            caps.redBits = 8
+            caps.blueBits = 8
+            caps.greenBits = 8
+            caps.isOnscreen = false
+            caps.isPBuffer = true
+            val drawable = factory.createOffscreenAutoDrawable(factory.defaultDevice, caps, DefaultGLCapabilitiesChooser(), project.width, project.height)
+            drawable.setSharedContext(glPanel?.context)
+            drawable.display()
+            drawable.context.makeCurrent()
+            val gl2 = drawable.gl.gL2
+            gl2.swapInterval = 0
+            gl2.glMatrixMode(GL2.GL_MODELVIEW)
+            gl2.glLoadIdentity()
+            gl2.glViewport(0, 0, Main.project.width, Main.project.height)
+            gl2.glScaled(1.0, -1.0, 1.0)
+
+            gl2.glMatrixMode(GL2.GL_PROJECTION)
+            gl2.glLoadIdentity()
+            glu.gluPerspective(90.0, Main.project.width.toDouble() / Main.project.height, 1.0, Main.project.width.toDouble())
+            glu.gluLookAt(0.0, 0.0, Main.project.height / 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+
+            gl2.swapInterval = 0
+            gl2.glDisable(GL2.GL_DEPTH_TEST)
+            gl2.glEnable(GL2.GL_TEXTURE_2D)
+            gl2.glEnable(GL2.GL_BLEND)
+            gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+            gl2.glClearColor(0f, 0f, 0f, 1f)
+
+            val b = IntBuffer.allocate(1)
+            gl2.glGenRenderbuffers(1, b)
+            val renderBufID = b.get()
+
+            val bb = IntBuffer.allocate(1)
+            gl2.glGenFramebuffers(1, bb)
+            val frameBufID = bb.get()
+
+            gl2.glBindRenderbuffer(GL2.GL_RENDERBUFFER, renderBufID)
+            gl2.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL.GL_RGB, Main.project.width, Main.project.height)
+
+            gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
+            gl2.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, GL2.GL_RENDERBUFFER, renderBufID)
+
             while (frame <= endFrame) {
-                glPanel?.display()
+
+                gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
+                gl2.glDrawBuffer(GL2.GL_COLOR_ATTACHMENT0)
+                gl2.glClear(GL2.GL_COLOR_BUFFER_BIT)
+                project.scene[selectedScene].draw(gl2, Drawable.DrawMode.Preview, frame)
+                val buf = ByteBuffer.allocate(project.width * project.height * 3)
+                gl2.glReadBuffer(GL2.GL_COLOR_ATTACHMENT0)
+                gl2.glReadPixels(0, 0, project.width, project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
+                recorder?.recordImage(project.width, project.height, 8, 3, project.width * 3, -1, buf)
+
 
                 val samples = project.scene[selectedScene].getSamples(frame)
-                val buf = FloatBuffer.allocate(samples.size).put(samples)
-                buf.position(0)
-                recorder?.recordSamples(project.sampleRate, project.audioChannel, buf)
+                val audioBuf = FloatBuffer.allocate(samples.size).put(samples)
+                audioBuf.position(0)
+                recorder?.recordSamples(project.sampleRate, project.audioChannel, audioBuf)
 
                 infoCallcack.onProgress(frame, endFrame)
                 frame++
@@ -111,20 +170,18 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         }
     }
 
-    fun renderFinal(frame: Int) {
+    private fun renderFinal(frame: Int, recorder: FFmpegFrameRecorder) {
         this.frame = frame
+
     }
 
     fun updateObject() {
-        project.scene.forEach { scene->
+        project.scene.forEach { scene ->
             scene.forEach {
                 it.currentObject = null
             }
         }
     }
-
-    private var frameBufID = 0
-    private var renderBufID = 0
 
     override fun reshape(drawable: GLAutoDrawable, x: Int, y: Int, width: Int, height: Int) {
         gl2.glMatrixMode(GL2.GL_PROJECTION)
@@ -138,48 +195,18 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         gl2.glMatrixMode(GL2.GL_MODELVIEW)
         gl2.glLoadIdentity()
 
-        if (encoding) {
-            gl2.glViewport(0, 0, Main.project.width, Main.project.height)
-            gl2.glScaled(1.0, -1.0, 1.0)
-            gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
-            gl2.glDrawBuffer(GL2.GL_COLOR_ATTACHMENT0)
-        }
-
         gl2.glClear(GL2.GL_COLOR_BUFFER_BIT)
         project.scene[selectedScene].draw(gl2, Drawable.DrawMode.Preview, frame)
-
-        if (encoding) {
-            val buf = ByteBuffer.allocate(project.width * project.height * 3)
-            gl2.glReadBuffer(GL2.GL_COLOR_ATTACHMENT0)
-            gl2.glReadPixels(0, 0, project.width, project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
-            recorder?.recordImage(project.width, project.height, 8, 3, project.width * 3, -1, buf)
-        }
-
     }
 
     override fun init(drawable: GLAutoDrawable) {
         gl2 = drawable.gl.gL2
+        gl2.swapInterval = 0
         gl2.glDisable(GL2.GL_DEPTH_TEST)
         gl2.glEnable(GL2.GL_TEXTURE_2D)
         gl2.glEnable(GL2.GL_BLEND)
         gl2.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
         gl2.glClearColor(0f, 0f, 0f, 1f)
-
-
-        val b = IntBuffer.allocate(1)
-        gl2.glGenRenderbuffers(1, b)
-        renderBufID = b.get()
-
-        val bb = IntBuffer.allocate(1)
-        gl2.glGenFramebuffers(1, bb)
-        frameBufID = bb.get()
-
-        gl2.glBindRenderbuffer(GL2.GL_RENDERBUFFER, renderBufID)
-        gl2.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL.GL_RGB, Main.project.width, Main.project.height)
-
-        gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
-        gl2.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, GL2.GL_RENDERBUFFER, renderBufID)
-
     }
 
     override fun dispose(drawable: GLAutoDrawable) {
