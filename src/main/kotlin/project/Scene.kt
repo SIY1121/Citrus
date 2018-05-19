@@ -10,8 +10,8 @@ class Scene : ArrayList<Layer>(), Drawable, AudioSampleProvider {
 
     private var oldAudioFrame = 0
 
-    override fun getSamples(frame: Int): ShortArray {
-        val result = ShortArray(
+    override fun getSamples(frame: Int): FloatArray {
+        val result = FloatArray(
                 if (frame - oldAudioFrame in 1..99)
                     (frame - oldAudioFrame) * Main.project.sampleRate * Main.project.audioChannel / Main.project.fps
                 else
@@ -20,7 +20,7 @@ class Scene : ArrayList<Layer>(), Drawable, AudioSampleProvider {
         //println("sample size: ${result.size}")
         this.forEach {
             it.getSamples(frame).forEachIndexed { index, value ->
-                result[index] = (result[index] + value).toShort()
+                result[index] = (result[index] + value)
             }
         }
         oldAudioFrame = frame
