@@ -117,7 +117,8 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
     }
 
     init {
-        Main.project.scene[scene][layer].add(this)
+        if (scene != -1 && layer != -1)
+            Main.project.scene[scene][layer].add(this)
     }
 
     fun setupProperties() {

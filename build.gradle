@@ -44,6 +44,8 @@ dependencies {
 
     compile group: 'org.apache.commons', name: 'commons-lang3', version :'3.3.2'
 
+    compile group: 'com.github.wendykierp',name: 'JTransforms', version: '3.1'
+
     compile group: 'org.bytedeco', name: 'javacv-platform', version: '1.4.1'
     compile "org.jogamp.gluegen:gluegen-rt:2.3.2"
     compile "org.jogamp.jogl:jogl-all:2.3.2"
