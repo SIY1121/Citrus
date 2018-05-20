@@ -1,5 +1,6 @@
 package properties
 
+import javafx.application.Platform
 import javafx.beans.property.Property
 import ui.CustomSlider
 
@@ -7,23 +8,23 @@ import ui.CustomSlider
  * 数値を持つプロパティの親クラス
  * スライダーUIをもつ
  */
-abstract class CNumberProperty(override val valueProperty: Property<Number>,_min : Number,_max : Number,var def : Number,_tick : Number) : CitrusProperty<Number> {
+abstract class CNumberProperty(override val valueProperty: Property<Number>, _min: Number, _max: Number, var def: Number, _tick: Number) : CitrusProperty<Number> {
 
-    var min : Number
+    var min: Number
         get() = uiNode.min
-        set(value){
+        set(value) {
             uiNode.min = value.toDouble()
         }
 
-    var max : Number
+    var max: Number
         get() = uiNode.max
-        set(value){
+        set(value) {
             uiNode.max = value.toDouble()
         }
 
-    var tick : Number
+    var tick: Number
         get() = uiNode.tick
-        set(value){
+        set(value) {
             uiNode.tick = value.toDouble()
         }
 
@@ -33,12 +34,13 @@ abstract class CNumberProperty(override val valueProperty: Property<Number>,_min
         get() = slider
 
     //TODO プロパティ側の max min をUIに反映させる
-    init{
+    init {
         min = _min
         max = _max
         tick = _tick
-        uiNode.value = def.toDouble()
+        //uiNode.value = def.toDouble()
+        uiNode.valueProperty.bindBidirectional(valueProperty)
         value = def
-        valueProperty.addListener { _,_,n->uiNode.value = n.toDouble() }
+        //valueProperty.addListener { _, _, n -> Platform.runLater{uiNode.value = n.toDouble()} }
     }
 }
