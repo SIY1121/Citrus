@@ -68,13 +68,20 @@ class AudioWaveform(defLayer: Int, defScene: Int) : DrawableObject(defLayer, def
         isGrabberStarted = true
     }
 
+    var original = FloatArray(0)
     override fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
         super.onDraw(gl, mode, frame)
         if (isGrabberStarted) {
             gl.glEnableClientState(GL2.GL_VERTEX_ARRAY)
             gl.glLineWidth(lineWidth.value.toFloat())
             gl.glColor4d(color.value.red, color.value.green, color.value.blue, alpha.value.toDouble())
-            val samples = getSamples(frame)
+
+            val s = getSamples(frame)
+            if(s.isNotEmpty())
+                original = s
+
+            val samples = original.copyOf()
+
             if (samples.isEmpty()) return
             val fft = FloatFFT_1D(samples.size.toLong())
             fft.realForward(samples)
@@ -91,7 +98,7 @@ class AudioWaveform(defLayer: Int, defScene: Int) : DrawableObject(defLayer, def
 
             val buf = FloatBuffer.allocate((maxHz.value.toInt() / samplePerHz) * 6)
             for (i in 0 until buf.limit() / 6) {
-                val x = i / (buf.limit()/6f) * Main.project.width - Main.project.width / 2f
+                val x = i / (buf.limit() / 6f) * Main.project.width - Main.project.width / 2f
                 buf.put(x)
                 buf.put(-Main.project.height / 2f)
                 buf.put(0f)
