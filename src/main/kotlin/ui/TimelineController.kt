@@ -72,6 +72,12 @@ class TimelineController : Initializable {
                     caret.layoutX = field * pixelPerFrame
                     topCaret.layoutX = field * pixelPerFrame - offsetX
                     polygonCaret.layoutX = field * pixelPerFrame - offsetX
+
+                    if (topCaret.layoutX >= timelineAxis.width)
+                        if (playing) layerScrollPane.hvalue += layerScrollPane.width / (layerVBox.width - layerScrollPane.viewportBounds.width)
+                        else layerScrollPane.hvalue += 0.05
+                    else if (topCaret.layoutX < 0)
+                        layerScrollPane.hvalue -= 0.05
                 }
 
             }
@@ -177,6 +183,7 @@ class TimelineController : Initializable {
             drawAxis()
         })
         timelineAxisClipRectangle.widthProperty().bind(timelineAxis.widthProperty())
+
 
 
         layerScrollPane.setOnKeyPressed {
@@ -640,7 +647,7 @@ class TimelineController : Initializable {
     }
 
     fun topPaneOnMousePressed(mouseEvent: MouseEvent) {
-       currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
+        currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
     }
 
     fun topPaneOnMouseDragged(mouseEvent: MouseEvent) {

@@ -1,6 +1,7 @@
 package ui
 
 import com.sun.javafx.css.StyleManager
+import effects.EffectManager
 import interpolation.InterpolatorManager
 import javafx.application.Application
 import javafx.application.Platform
@@ -43,6 +44,7 @@ class Main : Application() {
             InterpolatorManager.load()
             SplashController.notifyProgress(0.2,"オブジェクトを読み込み中...")
             ObjectManager.load()
+            EffectManager.load()
             SplashController.notifyProgress(0.3,"FFmpegを初期化中...")
             FFmpegFrameGrabber.tryLoad()
 

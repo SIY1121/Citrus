@@ -1,4 +1,4 @@
-package effects
+package effects.graphics
 
 import java.nio.IntBuffer
 

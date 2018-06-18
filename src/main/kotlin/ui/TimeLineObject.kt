@@ -1,5 +1,6 @@
 package ui
 
+import annotation.CEffect
 import annotation.CObject
 import javafx.event.EventHandler
 import javafx.geometry.Insets
@@ -9,6 +10,7 @@ import javafx.scene.effect.DropShadow
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import annotation.CProperty
+import effects.EffectManager
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
 import javafx.scene.image.Image
@@ -278,6 +280,21 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             grid.columnConstraints[1].hgrow = Priority.ALWAYS
             editWindowRoot.children.add(accordion)
         }
+
+        val menu = ContextMenu()
+        EffectManager.effects.forEach { t, u ->
+            val item = MenuItem((u.annotations.first { it is CEffect } as CEffect).name)
+            println("yy"+item.text)
+            item.setOnAction {  }
+            menu.items.add(item)
+        }
+
+        editWindowRoot.children.add(Button("+").apply {
+            setOnMouseClicked {
+                println("clicked")
+                menu.show(this,it.screenX,it.screenY)
+            }
+        })
 
         cObject.propertyChangedListener = object : CitrusObject.PropertyChangedListener {
             override fun onPropertyChanged() {
