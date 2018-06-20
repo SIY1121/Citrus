@@ -22,8 +22,8 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
     var selected: Boolean = false
     var enabledSelectedOutline: Boolean = true
 
-    var bufferSize : Size = Size(Main.project.width.toDouble(),Main.project.height.toDouble())
-        set(value){
+    var bufferSize: Size = Size(Main.project.width.toDouble(), Main.project.height.toDouble())
+        set(value) {
             field = value
             initFrameBuffer()
         }
@@ -47,7 +47,7 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
     @CProperty("回転", 5)
     val rotate = CAnimatableDoubleProperty()
 
-    protected fun initFrameBuffer(){
+    protected fun initFrameBuffer() {
         ProjectRenderer.invoke(true) {
             val gl = it.gl.gL2
             textureBufferID = gl.UGenTexture()
@@ -88,7 +88,11 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
         gl.glMatrixMode(GL2.GL_MODELVIEW)
         gl.glPopMatrix()
 
-        gl.glViewport(0, 0, ProjectRenderer.instance.glPanel?.width ?: 0, ProjectRenderer.instance.glPanel?.height ?: 0)
+        if (mode == Drawable.DrawMode.Preview)
+            gl.glViewport(0, 0, ProjectRenderer.instance.glPanel?.width ?: 0, ProjectRenderer.instance.glPanel?.height
+                    ?: 0)
+        else
+            gl.glViewport(0, 0, Main.project.width, Main.project.height)
 //
         gl.glTranslated(x.value.toDouble(), y.value.toDouble(), z.value.toDouble())
         gl.glRotated(rotate.value.toDouble(), 0.0, 0.0, 1.0)

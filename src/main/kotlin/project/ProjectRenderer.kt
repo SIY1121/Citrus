@@ -134,7 +134,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             val frameBufID = bb.get()
 
             gl2.glBindRenderbuffer(GL2.GL_RENDERBUFFER, renderBufID)
-            gl2.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL.GL_RGB, Main.project.width, Main.project.height)
+            gl2.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL.GL_RGB, project.width, project.height)
 
             gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
             gl2.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, GL2.GL_RENDERBUFFER, renderBufID)
@@ -142,9 +142,13 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             while (frame <= endFrame) {
 
                 gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
-                gl2.glDrawBuffer(GL2.GL_COLOR_ATTACHMENT0)
+                gl2.glMatrixMode(GL2.GL_MODELVIEW)
+                gl2.glLoadIdentity()
+                gl2.glScaled(1.0, -1.0, 1.0)
+                gl2.glViewport(0, 0, Main.project.width,Main.project.height)
+                gl2.glClearColor(0f, 0f, 0f, 1f)
                 gl2.glClear(GL2.GL_COLOR_BUFFER_BIT)
-                project.scene[selectedScene].draw(gl2, Drawable.DrawMode.Preview, frame)
+                project.scene[selectedScene].draw(gl2, Drawable.DrawMode.Final, frame)
                 val buf = ByteBuffer.allocate(project.width * project.height * 3)
                 gl2.glReadBuffer(GL2.GL_COLOR_ATTACHMENT0)
                 gl2.glReadPixels(0, 0, project.width, project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
@@ -194,6 +198,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     override fun display(drawable: GLAutoDrawable) {
         gl2.glMatrixMode(GL2.GL_MODELVIEW)
         gl2.glLoadIdentity()
+        reshape(drawable, 0, 0, glPanel?.width ?: 0, glPanel?.height ?: 0)
         gl2.glViewport(0, 0, glPanel?.width ?: 0, glPanel?.height ?: 0)
         gl2.glClearColor(0f, 0f, 0f, 1f)
         gl2.glClear(GL2.GL_COLOR_BUFFER_BIT)
