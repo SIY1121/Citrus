@@ -282,17 +282,23 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         }
 
         val menu = ContextMenu()
-        EffectManager.effects.forEach { t, u ->
-            val item = MenuItem((u.annotations.first { it is CEffect } as CEffect).name)
-            println("yy"+item.text)
-            item.setOnAction {  }
-            menu.items.add(item)
-        }
+        if (cObject is DrawableObject)
+            EffectManager.graphicsEffects.forEach { t, u ->
+                val item = MenuItem((u.annotations.first { it is CEffect } as CEffect).name)
+                item.setOnAction { }
+                menu.items.add(item)
+            }
+        else if(cObject is Audio)
+            EffectManager.audioEffects.forEach { t, u ->
+                val item = MenuItem((u.annotations.first { it is CEffect } as CEffect).name)
+                item.setOnAction { }
+                menu.items.add(item)
+            }
 
         editWindowRoot.children.add(Button("+").apply {
             setOnMouseClicked {
                 println("clicked")
-                menu.show(this,it.screenX,it.screenY)
+                menu.show(this, it.screenX, it.screenY)
             }
         })
 

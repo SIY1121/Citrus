@@ -22,7 +22,7 @@
                             <children>
                                 <ImageView fitHeight="304.0" fitWidth="500.0" pickOnBounds="true" preserveRatio="true">
                                     <image>
-                                        <Image url="@../img/cit_sp.png" />
+                                        <Image url="@../img/cit_sp2.png" />
                                     </image>
                                 </ImageView>
                                 <Label alignment="CENTER" prefHeight="17.0" prefWidth="500.0" text="Citrus  alpha 0.1.3" textAlignment="CENTER">

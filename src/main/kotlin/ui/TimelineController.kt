@@ -353,6 +353,7 @@ class TimelineController : Initializable {
 
     fun seekTo(frame: Int) {
         caret.layoutX = frame * pixelPerFrame
+        currentFrame = frame
     }
 
     private fun drawAxis() {
@@ -625,7 +626,7 @@ class TimelineController : Initializable {
                 left = 1.0 / Main.project.fps * 1000.0 - (System.currentTimeMillis() - o)
 
 
-                Thread.sleep(Math.max(left.toLong(), 0L))
+                Thread.sleep(Math.max(left.toLong() / 2, 0L))
                 //else
                 //    start-=left.toInt() フレームスキップを行わない場合
 //                if (fpsCount == 60) {

@@ -10,10 +10,10 @@
 
 <BorderPane prefHeight="400.0" prefWidth="600.0" stylesheets="/layout/main.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.Welcome">
     <right>
-        <VBox spacing="10.0">
-            <ImageView fitHeight="108.0" fitWidth="274.0" pickOnBounds="true" preserveRatio="true" BorderPane.alignment="CENTER_RIGHT">
+        <VBox prefHeight="375.0" prefWidth="274.0" spacing="10.0">
+            <ImageView fitHeight="56.0" fitWidth="232.0" pickOnBounds="true" preserveRatio="true" BorderPane.alignment="CENTER_RIGHT">
                 <image>
-                    <Image url="@../img/citHeader.png" />
+                    <Image url="@../img/citHeader2.png" />
                 </image>
             <VBox.margin>
                <Insets bottom="30.0" top="30.0" />
