@@ -8,13 +8,14 @@ import com.jogamp.opengl.GL2
 import com.jogamp.opengl.util.texture.Texture
 import com.jogamp.opengl.util.texture.TextureIO
 import javafx.stage.FileChooser
+import org.opencv.core.Size
 import project.ProjectRenderer
 import properties.CFileProperty
 import java.io.File
 
 @CObject("画像", "00796BFF", "img/ic_photo.png")
 @CDroppable(["png", "jpg", "jpeg", "bmp", "gif", "tif"])
-class Image(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
+class Image(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
 
 
     override val id = "citrus/image"
@@ -38,11 +39,13 @@ class Image(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
 
     fun onFileLoad(file: String) {
         displayName = "[画像] ${File(file).name}"
-        ProjectRenderer.invoke(false, {
+        ProjectRenderer.invoke(false) {
             texture = TextureIO.newTexture(File(file), false)
             texture?.enable(it.gl)
+            bufferSize = Size(texture?.width?.toDouble() ?: 0.0, texture?.height?.toDouble() ?: 0.0)
+
             false
-        })
+        }
     }
 
     override fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {

@@ -43,7 +43,7 @@ class AudioWaveform(defLayer: Int, defScene: Int) : DrawableObject(defLayer, def
 
     init {
         file.valueProperty.addListener { _, _, n -> onFileLoad(n) }
-        ProjectRenderer.invoke(true, {
+        ProjectRenderer.invoke(true) {
             val gl2 = it.gl.gL2
             val b = IntBuffer.allocate(1)
             gl2.glGenBuffers(1, b)
@@ -51,7 +51,7 @@ class AudioWaveform(defLayer: Int, defScene: Int) : DrawableObject(defLayer, def
 
 
             false
-        })
+        }
     }
 
     override fun onFileDropped(file: String) {
