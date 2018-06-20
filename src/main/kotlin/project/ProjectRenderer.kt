@@ -20,6 +20,7 @@ import com.jogamp.opengl.GLCapabilities
 
 class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     companion object {
+        val glu = GLU()
         lateinit var instance: ProjectRenderer
         fun invoke(wait: Boolean, runnable: (drawable: GLAutoDrawable) -> Boolean): Boolean {
             return instance.glPanel?.invoke(wait, runnable) ?: false
@@ -39,7 +40,6 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     var frame = 0
 
     lateinit var gl2: GL2
-    val glu = GLU()
 
     val audioLine: SourceDataLine
 
@@ -86,7 +86,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             recorder?.sampleRate = project.sampleRate
             recorder?.videoBitrate = 10000000
             recorder?.videoCodecName = "h264"
-            recorder?.setVideoOption("threads","0")
+            recorder?.setVideoOption("threads", "0")
             recorder?.audioBitrate = 192_000
             recorder?.audioChannels = project.audioChannel
             recorder?.audioCodec = avcodec.AV_CODEC_ID_AAC
@@ -194,7 +194,8 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     override fun display(drawable: GLAutoDrawable) {
         gl2.glMatrixMode(GL2.GL_MODELVIEW)
         gl2.glLoadIdentity()
-
+        gl2.glViewport(0, 0, glPanel?.width ?: 0, glPanel?.height ?: 0)
+        gl2.glClearColor(0f, 0f, 0f, 1f)
         gl2.glClear(GL2.GL_COLOR_BUFFER_BIT)
         project.scene[selectedScene].draw(gl2, Drawable.DrawMode.Preview, frame)
     }

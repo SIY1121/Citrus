@@ -101,7 +101,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
             startPos.max = videoLength
             end = start + videoLength
             //テクスチャ準備
-            ProjectRenderer.invoke(true, {
+            ProjectRenderer.invoke(true) {
                 if (textureID != 0) {
                     val b = IntBuffer.allocate(1)
                     b.put(textureID)
@@ -120,10 +120,11 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
                         ?: 0, 0, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, ByteBuffer.allocate((grabber?.imageWidth
                         ?: 0) * (grabber?.imageHeight ?: 0) * 3))
 
+                bufferSize = Size(grabber?.imageWidth?.toDouble() ?: 0.0, grabber?.imageHeight?.toDouble() ?: 0.0)
 
                 println("allocate ${grabber?.imageWidth}x${grabber?.imageHeight}")
                 false
-            })
+            }
             renderThumbs(dialog)
             Platform.runLater {
                 dialog.close()
@@ -266,7 +267,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
             view.cursor = Cursor.HAND
             view.style = "linear-gradient(to left right, #FFFFFFFF, #FFFFFF00)"
             view.setOnMouseClicked {
-                uiObject?.timelineController?.seekTo(thumbFrame.toInt()-startPos.value.toInt())
+                uiObject?.timelineController?.seekTo(thumbFrame.toInt() - startPos.value.toInt())
             }
             thumbPane.children.add(view)
         }
@@ -277,7 +278,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
             uiObject?.widthProperty()?.addListener { _, _, n ->
                 rect.width = n.toDouble()
             }
-            startPos.valueProperty.addListener { _,_,_->onScaleUpdate() }
+            startPos.valueProperty.addListener { _, _, _ -> onScaleUpdate() }
             uiObject?.headerPane?.children?.add(0, thumbPane)
             thumbPane.clip = rect
         }
