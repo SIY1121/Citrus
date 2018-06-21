@@ -106,7 +106,11 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
             gl.glViewport(0, 0, ProjectRenderer.instance.glPanel?.width ?: 0, ProjectRenderer.instance.glPanel?.height
                     ?: 0)
         else//出力時はビューポートを動画サイズに合わせる
+        {
             gl.glViewport(0, 0, Main.project.width, Main.project.height)
+            gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER,ProjectRenderer.instance.frameBufID)
+        }
+
 
         //各種移動を適用
         gl.glTranslated(x.value.toDouble(), y.value.toDouble(), z.value.toDouble())
