@@ -66,37 +66,54 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
         if (!setupFinished) return
 
         gl.glMatrixMode(GL2.GL_MODELVIEW)
-        gl.glPushMatrix()
-        gl.glLoadIdentity()
+        gl.glPushMatrix()//移動を保存
+        gl.glLoadIdentity()//移動を初期化
         gl.glMatrixMode(GL2.GL_PROJECTION)
-        gl.glPushMatrix()
-        gl.glLoadIdentity()
+        gl.glPushMatrix()//カメラを保存
+        gl.glLoadIdentity()//カメラを初期化
 
+        //カメラをオブジェクトを表示するめいいっぱいにセット
         glu.gluPerspective(90.0, bufferSize.width / bufferSize.height, 1.0, bufferSize.width)
         glu.gluLookAt(0.0, 0.0, bufferSize.height / 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        //ビューポートもめいいっぱいにセット
         gl.glViewport(0, 0, bufferSize.width.toInt(), bufferSize.height.toInt())
+
+        //フレームバッファ書き込みエリア
+        //////////////////////////////////////////////////////////////
+
         gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufferID)
 
         gl.glClearColor(0f, 0f, 0f, 0f)
         gl.glClear(GL2.GL_COLOR_BUFFER_BIT)
 
         onDraw(gl, mode, frame)
+
         gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0)
 
-        gl.glMatrixMode(GL2.GL_PROJECTION)
-        gl.glPopMatrix()
-        gl.glMatrixMode(GL2.GL_MODELVIEW)
-        gl.glPopMatrix()
+        //////////////////////////////////////////////////////////////
 
+        //TODO エフェクト適用
+
+
+        gl.glMatrixMode(GL2.GL_PROJECTION)
+        gl.glPopMatrix()//カメラを復元
+        gl.glMatrixMode(GL2.GL_MODELVIEW)
+        gl.glPopMatrix()//移動を保存
+        gl.glPushMatrix()//移動を保存
+
+        //プレビュー時はビューポートをViewのサイズに合わせる
         if (mode == Drawable.DrawMode.Preview)
             gl.glViewport(0, 0, ProjectRenderer.instance.glPanel?.width ?: 0, ProjectRenderer.instance.glPanel?.height
                     ?: 0)
-        else
+        else//出力時はビューポートを動画サイズに合わせる
             gl.glViewport(0, 0, Main.project.width, Main.project.height)
-//
+
+        //各種移動を適用
         gl.glTranslated(x.value.toDouble(), y.value.toDouble(), z.value.toDouble())
         gl.glRotated(rotate.value.toDouble(), 0.0, 0.0, 1.0)
         gl.glScaled(scale.value.toDouble(), scale.value.toDouble(), scale.value.toDouble())
+
+        //レンダリング済み画像を再描画
         gl.glBindTexture(GL.GL_TEXTURE_2D, textureBufferID)
 
         gl.glBegin(GL2.GL_QUADS)
@@ -111,7 +128,7 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
         gl.glEnd()
 
         gl.glMatrixMode(GL2.GL_MODELVIEW)
-        gl.glPopMatrix()
+        gl.glPopMatrix()//各種移動を戻す
     }
 
     open fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {

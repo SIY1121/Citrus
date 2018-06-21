@@ -304,7 +304,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
         cObject.propertyChangedListener = object : CitrusObject.PropertyChangedListener {
             override fun onPropertyChanged() {
-                if (!timelineController.playing)
+                if (!timelineController.playing && !timelineController.projectRenderer.encoding)
                     timelineController.projectRenderer.renderPreview(timelineController.currentFrame)
             }
         }

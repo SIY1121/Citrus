@@ -131,7 +131,6 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
         allProperties.forEach {
             if (it is CitrusAnimatableProperty<*>)
                 animatableProperties.add(it)
-            //TODO AnimatableDoublePropertyでユーザーによるイベントの発火かアニメーションによる発火かを見分ける機構が必要
             it.valueProperty.addListener { _, _, _ -> propertyChangedListener?.onPropertyChanged() }
         }
     }

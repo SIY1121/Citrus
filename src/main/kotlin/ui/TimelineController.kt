@@ -193,10 +193,14 @@ class TimelineController : Initializable {
                     else stop()
                 }
                 KeyCode.RIGHT -> {
+                    playing = true//再生中にしないとキーフレームが設定されているときに複数回描画されてしまう
                     currentFrame++
+                    playing = false
                 }
                 KeyCode.LEFT -> {
+                    playing = true//再生中にしないと(ry
                     currentFrame--
+                    playing = false
                 }
                 KeyCode.DELETE -> {
                     allTimelineObjects.filter { it.strictSelected }.forEach {
@@ -448,7 +452,9 @@ class TimelineController : Initializable {
 
         if (selectedObjects.isEmpty() && mouseEvent.button == MouseButton.PRIMARY) {
             //parentController.rightPane.children.clear()
+            playing = true//再生中にしないと、キーフレームが打たれている際に複数回描画してしまう
             currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
+            playing = false
         }
     }
 
@@ -501,7 +507,9 @@ class TimelineController : Initializable {
                 }
             }
         else {
+            playing = true
             currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
+            playing = false
         }
 
     }
