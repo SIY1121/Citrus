@@ -3,7 +3,6 @@ package project
 import com.jogamp.opengl.*
 import com.jogamp.opengl.awt.GLJPanel
 import com.jogamp.opengl.glu.GLU
-import com.jogamp.opengl.util.FPSAnimator
 import kotlinx.coroutines.experimental.launch
 import objects.Drawable
 import org.bytedeco.javacpp.avcodec
@@ -75,7 +74,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
                 ?: 0.0)
     }
 
-    fun startEncode(infoCallcack: EncodingInfoCallback) {
+    fun startEncode(infoCallback: EncodingInfoCallback) {
         launch {
             val endFrame = project.scene[selectedScene].flatten().maxBy { it.end }?.end
                     ?: throw Exception("オブジェクトの最終位置を見つけることができませんでした。")
@@ -139,38 +138,47 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
             gl2.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, GL2.GL_RENDERBUFFER, renderBufID)
 
-            while (frame <= endFrame) {
+            var renderFrame = 0
 
+            while (renderFrame <= endFrame) {
+
+                //レンダリング用バッファをバインド
                 gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
                 gl2.glMatrixMode(GL2.GL_MODELVIEW)
-                gl2.glLoadIdentity()
-                gl2.glScaled(1.0, -1.0, 1.0)
-                gl2.glViewport(0, 0, Main.project.width,Main.project.height)
-                gl2.glClearColor(0f, 0f, 0f, 1f)
-                gl2.glClear(GL2.GL_COLOR_BUFFER_BIT)
-                project.scene[selectedScene].draw(gl2, Drawable.DrawMode.Final, frame)
+                gl2.glLoadIdentity()//モデルビュー行列を初期化
+                gl2.glScaled(1.0, -1.0, 1.0)//出力後に反転するので予め反転させておく
+                gl2.glViewport(0, 0, Main.project.width,Main.project.height)//ビューポートを動画のサイズにセット
+
+                //描画
+                project.scene[selectedScene].draw(gl2, Drawable.DrawMode.Final, renderFrame)
+
+                //レコーダーに流し込む
                 val buf = ByteBuffer.allocate(project.width * project.height * 3)
                 gl2.glReadBuffer(GL2.GL_COLOR_ATTACHMENT0)
                 gl2.glReadPixels(0, 0, project.width, project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
                 recorder?.recordImage(project.width, project.height, 8, 3, project.width * 3, -1, buf)
 
+                //このタイミングでバッファをクリア
+                gl2.glClearColor(0f, 0f, 0f, 1f)
+                gl2.glClear(GL2.GL_COLOR_BUFFER_BIT or GL2.GL_DEPTH_BUFFER_BIT)
 
-                val samples = project.scene[selectedScene].getSamples(frame)
+                //音声サンプルを取得
+                val samples = project.scene[selectedScene].getSamples(renderFrame)
                 val audioBuf = FloatBuffer.allocate(samples.size).put(samples)
                 audioBuf.position(0)
                 recorder?.recordSamples(project.sampleRate, project.audioChannel, audioBuf)
 
-                infoCallcack.onProgress(frame, endFrame)
-                frame++
+                infoCallback.onProgress(renderFrame, endFrame)
+                renderFrame++
             }
             encoding = false
             recorder?.stop()
             recorder?.release()
-            glPanel?.invoke(true, {
+            glPanel?.invoke(true) {
                 it.gl.glViewport(0, 0, glPanel?.surfaceWidth ?: 1, glPanel?.surfaceHeight ?: 1)
                 true
-            })
-            infoCallcack.onFinish()
+            }
+            infoCallback.onFinish()
         }
     }
 
@@ -196,6 +204,7 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     }
 
     override fun display(drawable: GLAutoDrawable) {
+        println("display")
         gl2.glMatrixMode(GL2.GL_MODELVIEW)
         gl2.glLoadIdentity()
         reshape(drawable, 0, 0, glPanel?.width ?: 0, glPanel?.height ?: 0)
