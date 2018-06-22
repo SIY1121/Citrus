@@ -1,4 +1,4 @@
-package effects.audio
+package effect.audio
 
 import objects.AudioSampleProvider
 

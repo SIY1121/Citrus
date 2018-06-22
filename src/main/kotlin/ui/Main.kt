@@ -1,7 +1,7 @@
 package ui
 
 import com.sun.javafx.css.StyleManager
-import effects.EffectManager
+import effect.EffectManager
 import interpolation.InterpolatorManager
 import javafx.application.Application
 import javafx.application.Platform
@@ -15,10 +15,7 @@ import javafx.stage.Stage
 import javafx.stage.StageStyle
 import objects.ObjectManager
 import org.bytedeco.javacpp.Loader
-import org.bytedeco.javacpp.opencv_objdetect
 import org.bytedeco.javacv.FFmpegFrameGrabber
-import org.bytedeco.javacv.JavaCV
-import org.opencv.core.Core
 import project.Project
 
 

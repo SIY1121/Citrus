@@ -30,3 +30,32 @@ fun GL2.UGenFrameBuffer(): Int {
     this.glGenFramebuffers(1, buf)
     return buf.get()
 }
+
+fun GL2.UCreateVertexShader(source: String): Int {
+    val id = this.glCreateShader(GL2.GL_VERTEX_SHADER)
+    this.glShaderSource(id, 1, kotlin.arrayOf(source), null)
+    this.glCompileShader(id)
+    return id
+}
+
+fun GL2.UCreateFragmentShader(source: String): Int {
+    val id = this.glCreateShader(GL2.GL_FRAGMENT_SHADER)
+    this.glShaderSource(id, 1, kotlin.arrayOf(source), null)
+    this.glCompileShader(id)
+    return id
+}
+
+fun GL2.UCreateProgram(vtxId: Int, fId: Int, destoryShader: Boolean = true): Int {
+    val id = this.glCreateProgram()
+
+    this.glAttachShader(id, vtxId)
+    this.glAttachShader(id, fId)
+    this.glLinkProgram(id)
+    if (destoryShader) {
+        this.glDeleteShader(vtxId)
+        this.glDeleteShader(fId)
+    }
+
+
+    return id
+}

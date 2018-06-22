@@ -1,4 +1,4 @@
-package effects.audio
+package effect.audio
 
 import annotation.CEffect
 import annotation.CProperty

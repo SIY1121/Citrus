@@ -10,7 +10,7 @@ import javafx.scene.effect.DropShadow
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import annotation.CProperty
-import effects.EffectManager
+import effect.EffectManager
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
 import javafx.scene.image.Image

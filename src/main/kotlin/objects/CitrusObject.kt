@@ -1,12 +1,11 @@
 package objects
 
 import annotation.CProperty
-import effects.Effect
+import effect.Effect
 import properties.CitrusAnimatableProperty
 import properties.CitrusProperty
 import ui.Main
 import ui.TimeLineObject
-import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
 /**

@@ -4,6 +4,7 @@ import annotation.CObject
 import annotation.CProperty
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
+import effect.graphics.DrawableEffect
 import org.opencv.core.Size
 import project.ProjectRenderer
 import project.ProjectRenderer.Companion.glu
@@ -46,6 +47,12 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
     val alpha = CAnimatableDoubleProperty(0.0, 1.0, 1.0, 0.01)
     @CProperty("回転", 5)
     val rotate = CAnimatableDoubleProperty()
+
+    init{
+        ProjectRenderer.invoke(true) {
+            effects.add(effect.graphics.MonochromatizationEffect(this, it.gl.gL2))
+        }
+    }
 
     protected fun initFrameBuffer() {
         ProjectRenderer.invoke(true) {
@@ -92,7 +99,28 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
 
         //////////////////////////////////////////////////////////////
 
+
         //TODO エフェクト適用
+        var currentTexture = textureBufferID
+        effects.forEach {
+
+            if(it is DrawableEffect)
+                currentTexture = it.onDraw(currentTexture)
+
+
+            gl.glMatrixMode(GL2.GL_MODELVIEW)
+            gl.glPushMatrix()//移動を保存
+            gl.glLoadIdentity()//移動を初期化
+            gl.glMatrixMode(GL2.GL_PROJECTION)
+            gl.glPushMatrix()//カメラを保存
+            gl.glLoadIdentity()//カメラを初期化
+
+            //カメラをオブジェクトを表示するめいいっぱいにセット
+            glu.gluPerspective(90.0, bufferSize.width / bufferSize.height, 1.0, bufferSize.width)
+            glu.gluLookAt(0.0, 0.0, bufferSize.height / 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+            //ビューポートもめいいっぱいにセット
+            gl.glViewport(0, 0, bufferSize.width.toInt(), bufferSize.height.toInt())
+        }
 
 
         gl.glMatrixMode(GL2.GL_PROJECTION)
@@ -118,7 +146,7 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
         gl.glScaled(scale.value.toDouble(), scale.value.toDouble(), scale.value.toDouble())
 
         //レンダリング済み画像を再描画
-        gl.glBindTexture(GL.GL_TEXTURE_2D, textureBufferID)
+        gl.glBindTexture(GL.GL_TEXTURE_2D, currentTexture)
 
         gl.glBegin(GL2.GL_QUADS)
         gl.glTexCoord2d(0.0, 0.0)
