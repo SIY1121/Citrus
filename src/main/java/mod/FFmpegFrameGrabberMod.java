@@ -767,7 +767,7 @@ public class FFmpegFrameGrabberMod extends FrameGrabber {
             // Find the decoder for the video stream
             AVCodec codec;
             if(video_par.codec_id()== avcodec.AV_CODEC_ID_H264)
-                codec = avcodec_find_decoder_by_name("h264_cuvid");
+                codec = avcodec_find_decoder_by_name("h264_qsv");
             else
                 codec = avcodec_find_decoder(video_par.codec_id());
 

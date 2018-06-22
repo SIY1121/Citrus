@@ -108,7 +108,7 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
         else//出力時はビューポートを動画サイズに合わせる
         {
             gl.glViewport(0, 0, Main.project.width, Main.project.height)
-            gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER,ProjectRenderer.instance.frameBufID)
+            //gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER,ProjectRenderer.instance.frameBufID)
         }
 
 

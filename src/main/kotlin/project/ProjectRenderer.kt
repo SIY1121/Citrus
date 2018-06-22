@@ -51,7 +51,9 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
     var encoding = false
     var recorder: FFmpegFrameRecorder? = null
 
-    var frameBufID = 0
+    val bufferFrameCount = 1
+
+    var frameBufID = IntArray(bufferFrameCount)
 
     init {
         instance = this
@@ -90,7 +92,8 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             recorder = FFmpegFrameRecorder(File("out.mp4"), project.width, project.height)
             recorder?.frameRate = project.fps.toDouble()
             recorder?.sampleRate = project.sampleRate
-            recorder?.videoBitrate = 10000000
+            recorder?.videoQuality = 21.0
+            recorder?.setVideoOption("preset", "medium")
             recorder?.videoCodecName = "h264"
             recorder?.setVideoOption("threads", "0")
             recorder?.audioBitrate = 192_000
@@ -99,62 +102,94 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
             recorder?.start()
 
 
-            val b = IntBuffer.allocate(1)
-            gl2.glGenRenderbuffers(1, b)
-            val renderBufID = b.get()
+            val b = IntBuffer.allocate(bufferFrameCount)
+            gl2.glGenRenderbuffers(bufferFrameCount, b)
+            val renderBufID = b.array()
 
-            val bb = IntBuffer.allocate(1)
-            gl2.glGenFramebuffers(1, bb)
-            frameBufID = bb.get()
+            val bb = IntBuffer.allocate(bufferFrameCount)
+            gl2.glGenFramebuffers(bufferFrameCount, bb)
+            frameBufID = bb.array()
 
-            gl2.glBindRenderbuffer(GL2.GL_RENDERBUFFER, renderBufID)
-            gl2.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL.GL_RGB, project.width, project.height)
+            for (i in 0 until bufferFrameCount) {
+                gl2.glBindRenderbuffer(GL2.GL_RENDERBUFFER, renderBufID[i])
+                gl2.glRenderbufferStorage(GL2.GL_RENDERBUFFER, GL.GL_RGB, project.width, project.height)
 
-            gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
-            gl2.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, GL2.GL_RENDERBUFFER, renderBufID)
+                gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID[i])
+                gl2.glFramebufferRenderbuffer(GL2.GL_FRAMEBUFFER, GL2.GL_COLOR_ATTACHMENT0, GL2.GL_RENDERBUFFER, renderBufID[i])
+            }
 
-            val task = Timer().schedule(0L,1000L){
+
+            val task = Timer().schedule(0L, 1000L) {
                 infoCallback.onProgress(frame, endFrame)
             }
 
 
             glPanel?.invoke(true) {
+                var oldTime = 0L
                 while (frame <= endFrame) {
+                    oldTime = System.currentTimeMillis()
 
-                    gl2.glMatrixMode(GL2.GL_MODELVIEW)
-                    gl2.glLoadIdentity()
-                    //reshape(drawable, 0, 0, project.width, project.height)
-                    gl2.glViewport(0, 0, project.width, project.height)
-                    gl2.glScissor(0, 0, project.width, project.height)
-                    //レンダリング用バッファをバインド
-                    gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
-                    gl2.glMatrixMode(GL2.GL_MODELVIEW)
-                    gl2.glLoadIdentity()//モデルビュー行列を初期化
-                    gl2.glScaled(1.0, -1.0, 1.0)//出力後に反転するので予め反転させておく
-
-
-                    gl2.glClearColor(0f, 0f, 0f, 1f)
-                    gl2.glClear(GL2.GL_COLOR_BUFFER_BIT)
-                    project.scene[selectedScene].draw(gl2, if (encoding) Drawable.DrawMode.Final else Drawable.DrawMode.Preview, frame)
-
-                    gl2.glViewport(0, 0, Main.project.width, Main.project.height)//ビューポートを動画のサイズにセット
-                    gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
-                    //レコーダーに流し込む
-                    val buf = ByteBuffer.allocate(project.width * project.height * 3)
-                    gl2.glReadBuffer(GL2.GL_COLOR_ATTACHMENT0)
-                    gl2.glReadPixels(0, 0, project.width, project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
-                    recorder?.recordImage(project.width, project.height, 8, 3, project.width * 3, -1, buf)
-
-                    //音声サンプルを取得
-                    val samples = project.scene[selectedScene].getSamples(frame)
-                    val audioBuf = FloatBuffer.allocate(samples.size).put(samples)
-                    audioBuf.position(0)
-                    recorder?.recordSamples(project.sampleRate, project.audioChannel, audioBuf)
-                    gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0)
+                    for (i in 0 until bufferFrameCount) {
+                        gl2.glMatrixMode(GL2.GL_MODELVIEW)
+                        gl2.glLoadIdentity()
+                        //reshape(drawable, 0, 0, project.width, project.height)
+                        gl2.glViewport(0, 0, project.width, project.height)
+                        gl2.glScissor(0, 0, project.width, project.height)
+                        //レンダリング用バッファをバインド
+                        gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID[i])
+                        gl2.glMatrixMode(GL2.GL_MODELVIEW)
+                        gl2.glLoadIdentity()//モデルビュー行列を初期化
+                        gl2.glScaled(1.0, -1.0, 1.0)//出力後に反転するので予め反転させておく
 
 
-                    frame++
+                        gl2.glClearColor(0f, 0f, 0f, 1f)
+                        gl2.glClear(GL2.GL_COLOR_BUFFER_BIT)
+                        project.scene[selectedScene].draw(gl2, if (encoding) Drawable.DrawMode.Final else Drawable.DrawMode.Preview, frame)
+
+                        gl2.glViewport(0, 0, Main.project.width, Main.project.height)//ビューポートを動画のサイズにセット
+
+                        frame++
+                    }
+
+
+
+
+                    println("render ${System.currentTimeMillis() - oldTime}")
+                    oldTime = System.currentTimeMillis()
+
+                    for (i in 0 until bufferFrameCount) {
+                        gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID[i])
+
+                        //レコーダーに流し込む
+                        val buf = ByteBuffer.allocate(project.width * project.height * 3)
+                        gl2.glReadBuffer(GL2.GL_COLOR_ATTACHMENT0)
+                        gl2.glReadPixels(0, 0, project.width, project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
+                        recorder?.recordImage(project.width, project.height, 8, 3, project.width * 3, -1, buf)
+
+                    }
+
+                    frame -= bufferFrameCount
+                    println("record ${System.currentTimeMillis() - oldTime}")
+                    oldTime = System.currentTimeMillis()
+
+                    for (i in 0 until bufferFrameCount) {
+
+
+                        //音声サンプルを取得
+                        val samples = project.scene[selectedScene].getSamples(frame)
+                        val audioBuf = FloatBuffer.allocate(samples.size).put(samples)
+                        audioBuf.position(0)
+                        recorder?.recordSamples(project.sampleRate, project.audioChannel, audioBuf)
+                        gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0)
+
+
+
+                        frame++
+                    }
+                    println("audio ${System.currentTimeMillis() - oldTime}")
+                    oldTime = System.currentTimeMillis()
                 }
+
                 false
             }
             task.cancel()
@@ -194,41 +229,15 @@ class ProjectRenderer(var project: Project, glp: GLJPanel?) : GLEventListener {
         println("display")
         gl2.glMatrixMode(GL2.GL_MODELVIEW)
         gl2.glLoadIdentity()
-        if (encoding) {
-            //reshape(drawable, 0, 0, project.width, project.height)
-            gl2.glViewport(0, 0, project.width, project.height)
-            gl2.glScissor(0, 0, project.width, project.height)
-            //レンダリング用バッファをバインド
-            gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
-            gl2.glMatrixMode(GL2.GL_MODELVIEW)
-            gl2.glLoadIdentity()//モデルビュー行列を初期化
-            gl2.glScaled(1.0, -1.0, 1.0)//出力後に反転するので予め反転させておく
 
-        } else {
-            //reshape(drawable, 0, 0, glPanel?.width ?: 0, glPanel?.height ?: 0)
-            gl2.glViewport(0, 0, glPanel?.width ?: 0, glPanel?.height ?: 0)
-        }
+        //reshape(drawable, 0, 0, glPanel?.width ?: 0, glPanel?.height ?: 0)
+        gl2.glViewport(0, 0, glPanel?.width ?: 0, glPanel?.height ?: 0)
+
 
         gl2.glClearColor(0f, 0f, 0f, 1f)
         gl2.glClear(GL2.GL_COLOR_BUFFER_BIT)
         project.scene[selectedScene].draw(gl2, if (encoding) Drawable.DrawMode.Final else Drawable.DrawMode.Preview, frame)
 
-        if (encoding) {
-            gl2.glViewport(0, 0, Main.project.width, Main.project.height)//ビューポートを動画のサイズにセット
-            gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, frameBufID)
-            //レコーダーに流し込む
-            val buf = ByteBuffer.allocate(project.width * project.height * 3)
-            gl2.glReadBuffer(GL2.GL_COLOR_ATTACHMENT0)
-            gl2.glReadPixels(0, 0, project.width, project.height, GL.GL_BGR, GL.GL_UNSIGNED_BYTE, buf)
-            recorder?.recordImage(project.width, project.height, 8, 3, project.width * 3, -1, buf)
-
-            //音声サンプルを取得
-            val samples = project.scene[selectedScene].getSamples(frame)
-            val audioBuf = FloatBuffer.allocate(samples.size).put(samples)
-            audioBuf.position(0)
-            recorder?.recordSamples(project.sampleRate, project.audioChannel, audioBuf)
-            gl2.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0)
-        }
     }
 
     override fun init(drawable: GLAutoDrawable) {
