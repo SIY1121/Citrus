@@ -140,23 +140,4 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) : Cloneable {
         }
     }
 
-    public override fun clone(): CitrusObject {
-        val newObj = this::class.java.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(layer,scene) as CitrusObject
-        newObj.layer = layer
-        newObj.scene = scene
-        //TODO UIに反映させる
-        memberProperties.forEach {
-            println(it)
-            val p = it.get(newObj) as CitrusProperty<Any?>
-            if (p is CitrusAnimatableProperty<*>) {
-                (it.get(this) as CitrusAnimatableProperty<Any?>).keyFrames.forEach {
-                    (p as CitrusAnimatableProperty<Any?>).keyFrames.add(it)
-                }
-            } else {
-                p.valueProperty.value = (it.get(this) as CitrusProperty<Any>).value
-            }
-        }
-        return newObj
-    }
-
 }
