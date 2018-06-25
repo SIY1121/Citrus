@@ -312,10 +312,11 @@ class TimelineController : Initializable {
         caret.endY = layerCount * layerHeight
     }
 
-    fun addObject(clazz: Class<*>, layerIndex: Int, file: String? = null, start: Int? = null, end: Int? = null) {
+    fun addObject(clazz: Class<*>, layerIndex: Int, file: String? = null, start: Int? = null, end: Int? = null, newObj: CitrusObject? = null) {
         val layerPane = layerVBox.children[layerIndex] as Pane
 
-        val cObject = clazz.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(layerIndex, selectedScene) as CitrusObject
+        val cObject = newObj ?: clazz.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(layerIndex, selectedScene) as CitrusObject
+
         cObject.setupProperties()
         val o = TimeLineObject(cObject, this)
         o.prefHeight = layerHeight * 2

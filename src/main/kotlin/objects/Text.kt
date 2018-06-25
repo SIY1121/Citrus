@@ -106,6 +106,7 @@ class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
         val params = SnapshotParameters()
         params.fill = Color.TRANSPARENT
         t.snapshot(params, w)
+        println("w ${w.width} h ${w.height}")
 
         val buf = ByteBuffer.allocate(t.boundsInLocal.width.toInt() * t.boundsInLocal.height.toInt() * 4)
 

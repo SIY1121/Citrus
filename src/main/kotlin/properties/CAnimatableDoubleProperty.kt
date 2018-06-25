@@ -33,7 +33,7 @@ class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Dou
             node.layoutX = keyFrames[index].frame * TimelineController.pixelPerFrame
         }
     }
-
+    //TODO 分割時の挙動を実装
     private val _keyFrames: MutableList<KeyFrame<Number>> = ArrayList()
     override val keyFrames: MutableList<KeyFrame<Number>>
         get() = _keyFrames

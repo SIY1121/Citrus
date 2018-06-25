@@ -15,7 +15,7 @@ class CAnimatableColorProperty : CColorProperty(), CitrusAnimatableProperty<Colo
     override fun onTimelineScaleChanged() {
 
     }
-
+    //TODO プロパティの分割時の振る舞いを実装
     private var _frame = 0
     override var frame: Int
         get() = _frame

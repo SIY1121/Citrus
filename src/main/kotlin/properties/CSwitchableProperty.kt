@@ -17,8 +17,7 @@ class CSwitchableProperty(def : Boolean = false) : CitrusProperty<Boolean> {
 
     init{
         checkBox.isSelected = def
-        checkBox.setOnAction {
-            value = checkBox.isSelected
-        }
+
+        checkBox.selectedProperty().bindBidirectional(property)
     }
 }

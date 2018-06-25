@@ -288,7 +288,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                 item.setOnAction { }
                 menu.items.add(item)
             }
-        else if(cObject is Audio)
+        else if (cObject is Audio)
             EffectManager.audioEffects.forEach { t, u ->
                 val item = MenuItem((u.annotations.first { it is CEffect } as CEffect).name)
                 item.setOnAction { }
@@ -349,7 +349,12 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         popupRoot.children.add(Label("コピー"))
         val divideLabel = Label("分割")
         divideLabel.setOnMouseClicked {
-            timelineController.addObject(cObject.javaClass, cObject.layer, null, timelineController.currentFrame, cObject.end)
+            val newObj = cObject.clone()
+            newObj.setupProperties()
+            newObj.layer = cObject.layer
+            newObj.start = timelineController.currentFrame
+            newObj.end = cObject.end
+            timelineController.addObject(cObject.javaClass, cObject.layer, null, timelineController.currentFrame, cObject.end, newObj)
             cObject.end = timelineController.currentFrame
             onScaleChanged()
         }
