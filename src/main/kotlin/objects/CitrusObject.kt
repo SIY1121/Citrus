@@ -125,7 +125,7 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) : Cloneable {
 
     fun setupProperties() {
         this.javaClass.kotlin.memberProperties.filter {
-            println(it.name + " " + it.returnType)
+            //println(it.name + " " + it.returnType)
             it.annotations.any { it is CProperty } && Class.forName(it.returnType.toString()).interfaces.any { it.name == "properties.CitrusProperty" || it.name == "properties.CitrusAnimatableProperty" }
         }.forEach { memberProperties.add(it) }
 

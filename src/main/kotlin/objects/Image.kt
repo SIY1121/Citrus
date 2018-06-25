@@ -7,10 +7,12 @@ import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import com.jogamp.opengl.util.texture.Texture
 import com.jogamp.opengl.util.texture.TextureIO
+import javafx.application.Platform
 import javafx.stage.FileChooser
 import org.opencv.core.Size
 import project.ProjectRenderer
 import properties.CFileProperty
+import ui.WindowFactory
 import java.io.File
 
 @CObject("画像", "00796BFF", "img/ic_photo.png")
@@ -33,8 +35,8 @@ class Image(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
         displayName = "[画像]"
     }
 
-    override fun onFileDropped(file: String) {
-        onFileLoad(file)
+    override fun onFileDropped(f: String) {
+        file.value = f
     }
 
     fun onFileLoad(file: String) {
@@ -43,7 +45,6 @@ class Image(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
             texture = TextureIO.newTexture(File(file), false)
             texture?.enable(it.gl)
             bufferSize = Size(texture?.width?.toDouble() ?: 0.0, texture?.height?.toDouble() ?: 0.0)
-
             false
         }
     }
@@ -67,4 +68,5 @@ class Image(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
         gl.glEnd()
         gl.glBindTexture(GL.GL_TEXTURE_2D, 0)
     }
+
 }

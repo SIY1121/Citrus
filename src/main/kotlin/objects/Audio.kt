@@ -79,8 +79,8 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         displayName = "[音声]"
     }
 
-    override fun onFileDropped(file: String) {
-        onFileLoad(file)
+    override fun onFileDropped(f: String) {
+        file.value = f
     }
 
     private fun onFileLoad(file: String) {

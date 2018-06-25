@@ -73,9 +73,9 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
         displayName = "[動画]"
     }
 
-    override fun onFileDropped(file: String) {
-        onFileLoad(file)
-        TimelineController.instance.addObject(Audio::class.java, layer + 1, file)
+    override fun onFileDropped(f: String) {
+        file.value = f
+        TimelineController.instance.addObject(Audio::class.java, layer + 1, f)
     }
 
     private fun onFileLoad(file: String) {
