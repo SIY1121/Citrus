@@ -6,13 +6,14 @@ import properties.CitrusAnimatableProperty
 import properties.CitrusProperty
 import ui.Main
 import ui.TimeLineObject
+import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
 /**
  * タイムラインに並ぶオブジェクトのスーパークラス
  * 格納先配列へのバインディング実装済み
  */
-abstract class CitrusObject(defLayer: Int, defScene: Int) {
+abstract class CitrusObject(defLayer: Int, defScene: Int) : Cloneable {
 
     open val id = "citrus"
     open val name = "CitrusObject"
@@ -101,6 +102,8 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
             field = value
         }
 
+    val memberProperties: MutableList<KProperty1<CitrusObject, *>> = ArrayList()
+
     /**
      * アニメーション可能なプロパティを抜き出す
      */
@@ -124,14 +127,36 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
         this.javaClass.kotlin.memberProperties.filter {
             println(it.name + " " + it.returnType)
             it.annotations.any { it is CProperty } && Class.forName(it.returnType.toString()).interfaces.any { it.name == "properties.CitrusProperty" || it.name == "properties.CitrusAnimatableProperty" }
-        }.forEach {
+        }.forEach { memberProperties.add(it) }
+
+        memberProperties.forEach {
             allProperties.add(it.get(this) as CitrusProperty<*>)
         }
+
         allProperties.forEach {
             if (it is CitrusAnimatableProperty<*>)
                 animatableProperties.add(it)
             it.valueProperty.addListener { _, _, _ -> propertyChangedListener?.onPropertyChanged() }
         }
+    }
+
+    public override fun clone(): CitrusObject {
+        val newObj = this::class.java.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(layer,scene) as CitrusObject
+        newObj.layer = layer
+        newObj.scene = scene
+        //TODO UIに反映させる
+        memberProperties.forEach {
+            println(it)
+            val p = it.get(newObj) as CitrusProperty<Any?>
+            if (p is CitrusAnimatableProperty<*>) {
+                (it.get(this) as CitrusAnimatableProperty<Any?>).keyFrames.forEach {
+                    (p as CitrusAnimatableProperty<Any?>).keyFrames.add(it)
+                }
+            } else {
+                p.valueProperty.value = (it.get(this) as CitrusProperty<Any>).value
+            }
+        }
+        return newObj
     }
 
 }

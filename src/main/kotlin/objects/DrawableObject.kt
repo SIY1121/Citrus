@@ -49,9 +49,9 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
     val rotate = CAnimatableDoubleProperty()
 
     init{
-        ProjectRenderer.invoke(true) {
-            effects.add(effect.graphics.MonochromatizationEffect(this, it.gl.gL2))
-        }
+//        ProjectRenderer.invoke(true) {
+//            effects.add(effect.graphics.MonochromatizationEffect(this, it.gl.gL2))
+//        }
     }
 
     protected fun initFrameBuffer() {
@@ -103,11 +103,6 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
         //TODO エフェクト適用
         var currentTexture = textureBufferID
         effects.forEach {
-
-            if(it is DrawableEffect)
-                currentTexture = it.onDraw(currentTexture)
-
-
             gl.glMatrixMode(GL2.GL_MODELVIEW)
             gl.glPushMatrix()//移動を保存
             gl.glLoadIdentity()//移動を初期化
@@ -120,6 +115,12 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
             glu.gluLookAt(0.0, 0.0, bufferSize.height / 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
             //ビューポートもめいいっぱいにセット
             gl.glViewport(0, 0, bufferSize.width.toInt(), bufferSize.height.toInt())
+
+            if(it is DrawableEffect)
+                currentTexture = it.onDraw(currentTexture)
+
+
+
         }
 
 
