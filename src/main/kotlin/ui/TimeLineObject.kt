@@ -349,11 +349,8 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         popupRoot.children.add(Label("コピー"))
         val divideLabel = Label("分割")
         divideLabel.setOnMouseClicked {
-            val newObj = cObject.clone()
+            val newObj = cObject.clone(timelineController.currentFrame, cObject.end)
             newObj.setupProperties()
-            newObj.layer = cObject.layer
-            newObj.start = timelineController.currentFrame
-            newObj.end = cObject.end
             timelineController.addObject(cObject.javaClass, cObject.layer, null, timelineController.currentFrame, cObject.end, newObj)
             cObject.end = timelineController.currentFrame
             onScaleChanged()

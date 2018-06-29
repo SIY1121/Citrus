@@ -13,7 +13,7 @@ import kotlin.reflect.full.memberProperties
  * タイムラインに並ぶオブジェクトのスーパークラス
  * 格納先配列へのバインディング実装済み
  */
-abstract class CitrusObject(defLayer: Int, defScene: Int) : Cloneable {
+abstract class CitrusObject(defLayer: Int, defScene: Int) {
 
     open val id = "citrus"
     open val name = "CitrusObject"
@@ -140,11 +140,13 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) : Cloneable {
         }
     }
 
-    public override fun clone(): CitrusObject {
+    open fun clone(startPos: Int, endPos: Int): CitrusObject {
         val newObj = this::class.java.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(layer, scene) as CitrusObject
         newObj.layer = layer
         newObj.scene = scene
-        //TODO UIに反映させる
+        newObj.start = startPos
+        newObj.end = endPos
+
         memberProperties.forEach {
             println(it)
             val p = it.get(newObj) as CitrusProperty<Any>
