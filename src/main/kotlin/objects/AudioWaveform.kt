@@ -68,7 +68,9 @@ class AudioWaveform(defLayer: Int, defScene: Int) : DrawableObject(defLayer, def
         isGrabberStarted = true
     }
 
+    //TODO なんか表示されなくなった
     var original = FloatArray(0)
+
     override fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
         super.onDraw(gl, mode, frame)
         if (isGrabberStarted) {
@@ -77,7 +79,7 @@ class AudioWaveform(defLayer: Int, defScene: Int) : DrawableObject(defLayer, def
             gl.glColor4d(color.value.red, color.value.green, color.value.blue, alpha.value.toDouble())
 
             val s = getSamples(frame)
-            if(s.isNotEmpty())
+            if (s.isNotEmpty())
                 original = s
 
             val samples = original.copyOf()

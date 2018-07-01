@@ -323,28 +323,6 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                 g.fillRect(i * pixelPerBlock, waveFormCanvas.height - level, pixelPerBlock, level)
             }
 
-//            waveFormCanvas.layoutX = Math.max(offsetX - (uiObject?.layoutX
-//                    ?: 0.0), -startPos.value.toDouble() * TimelineController.pixelPerFrame)
-//            println("lx:${uiObject?.layoutX}")
-//            waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width
-//                    ?: 0.0, (uiObject?.width ?: 1.0) - waveFormCanvas.layoutX)
-//
-//
-//            val startSec = Math.max(((offsetX - (uiObject?.layoutX
-//                    ?: 0.0)) / TimelineController.pixelPerFrame) / Main.project.fps + (startPos.value.toDouble() / Main.project.fps), 0.0)
-//            val pixelPerData = (Main.project.fps * TimelineController.pixelPerFrame) * resolution
-//            var x =0.0
-//            var i = 0
-//            val g = waveFormCanvas.graphicsContext2D
-//            g.clearRect(0.0, 0.0, waveFormCanvas.width, waveFormCanvas.height)
-//            g.fill = Color.WHITE
-//            while (x < waveFormCanvas.width && (startSec / resolution).toInt() + i < waveLevelData.size) {
-//                val level = waveLevelData[(startSec / resolution).toInt() + i] / Byte.MAX_VALUE.toDouble() * waveFormCanvas.height
-//                g.fillRect(x, waveFormCanvas.height - level, pixelPerData, level)
-//                x += pixelPerData
-//                i++
-//            }
-
         }
     }
 
