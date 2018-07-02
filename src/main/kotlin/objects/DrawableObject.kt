@@ -15,7 +15,7 @@ import util.UGenTexture
 import util.USetupTexture
 
 /**
- * 描画が発生する小向ジェクトの親クラス
+ * 描画が発生するオブジェクトの親クラス
  * 座標、拡大率、透明度などをもつ
  */
 @CObject("描画")

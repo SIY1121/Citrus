@@ -284,10 +284,12 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     private fun renderWaveform() {
         //冗長なのを防ぐ
         val offsetX = uiObject?.timelineController?.offsetX ?: 0.0
+        val viewportWidth = uiObject?.timelineController?.hScrollBar?.width ?: 0.0
         //offsetは通常正だが念の為
         if (offsetX >= 0) {
             //オブジェクトブロックのx座標
             val uix = uiObject?.layoutX ?: 0.0
+            val uiw = uiObject?.width ?: 0.0
             //音声レベルブロック1個あたりの幅px
             val pixelPerBlock = TimelineController.pixelPerFrame * Main.project.fps * resolution
             val g = waveFormCanvas.graphicsContext2D
@@ -295,13 +297,16 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             g.clearRect(0.0, 0.0, waveFormCanvas.width, waveFormCanvas.height)
 
             waveFormCanvas.layoutX = Math.max(offsetX - uix, 0.0)
+            waveFormCanvas.width = Math.min(viewportWidth, uiw - waveFormCanvas.layoutX)
 
             //描画起点のx座標(ローカル座標）
             val scrolledX = waveFormCanvas.layoutX
             //波形表示開始位置sec
             var startInSec = scrolledX / TimelineController.pixelPerFrame / Main.project.fps
             //波形表示終了位置sec
-            var endInSec = (scrolledX + waveFormCanvas.width) / TimelineController.pixelPerFrame / Main.project.fps
+            var endInSec = (scrolledX + Math.min(viewportWidth, uiw - scrolledX)) / TimelineController.pixelPerFrame / Main.project.fps
+
+            println("s $startInSec e $endInSec")
 
             //再生位置パラメータ補正
             startInSec += startPos.value.toDouble() / Main.project.fps
@@ -317,28 +322,6 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                 val level = waveLevelData[startInBlock.toInt() + i] / Byte.MAX_VALUE.toDouble() * waveFormCanvas.height
                 g.fillRect(i * pixelPerBlock, waveFormCanvas.height - level, pixelPerBlock, level)
             }
-
-//            waveFormCanvas.layoutX = Math.max(offsetX - (uiObject?.layoutX
-//                    ?: 0.0), -startPos.value.toDouble() * TimelineController.pixelPerFrame)
-//            println("lx:${uiObject?.layoutX}")
-//            waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width
-//                    ?: 0.0, (uiObject?.width ?: 1.0) - waveFormCanvas.layoutX)
-//
-//
-//            val startSec = Math.max(((offsetX - (uiObject?.layoutX
-//                    ?: 0.0)) / TimelineController.pixelPerFrame) / Main.project.fps + (startPos.value.toDouble() / Main.project.fps), 0.0)
-//            val pixelPerData = (Main.project.fps * TimelineController.pixelPerFrame) * resolution
-//            var x =0.0
-//            var i = 0
-//            val g = waveFormCanvas.graphicsContext2D
-//            g.clearRect(0.0, 0.0, waveFormCanvas.width, waveFormCanvas.height)
-//            g.fill = Color.WHITE
-//            while (x < waveFormCanvas.width && (startSec / resolution).toInt() + i < waveLevelData.size) {
-//                val level = waveLevelData[(startSec / resolution).toInt() + i] / Byte.MAX_VALUE.toDouble() * waveFormCanvas.height
-//                g.fillRect(x, waveFormCanvas.height - level, pixelPerData, level)
-//                x += pixelPerData
-//                i++
-//            }
 
         }
     }
