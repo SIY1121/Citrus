@@ -15,10 +15,17 @@ class CSelectableProperty(val list: List<String>) : CitrusProperty<Number> {
     private val choice = ChoiceBox<String>()
     override val uiNode: ChoiceBox<String>
         get() = choice
-    init{
+
+    init {
         choice.items.addAll(list)
         choice.setOnAction {
             property.value = choice.selectionModel.selectedIndex
+        }
+
+        //分割等ではじめから値が入っているとき用
+        property.addListener { _, _, n ->
+            if (n.toInt() != choice.selectionModel.selectedIndex)
+                choice.selectionModel.select(n.toInt())
         }
     }
 }

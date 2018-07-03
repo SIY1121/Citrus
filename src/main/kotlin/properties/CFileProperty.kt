@@ -24,5 +24,7 @@ class CFileProperty(val filters: List<FileChooser.ExtensionFilter>) : CitrusProp
             chooser.extensionFilters.addAll(filters)
             value = chooser.showOpenDialog(button.scene.window).path
         }
+
+        value = ""
     }
 }

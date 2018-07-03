@@ -42,3 +42,6 @@ annotation class CInterpolation(val name: String)
  */
 @Target(AnnotationTarget.CLASS)
 annotation class CDroppable(val filter: Array<String>)
+
+@Target(AnnotationTarget.CLASS)
+annotation class CEffect(val name : String)

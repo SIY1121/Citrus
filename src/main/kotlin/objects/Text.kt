@@ -12,6 +12,7 @@ import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import javafx.scene.text.Font
 import javafx.scene.text.TextAlignment
+import org.opencv.core.Size
 import project.ProjectRenderer
 import properties.*
 import java.awt.GraphicsEnvironment
@@ -19,7 +20,7 @@ import java.nio.ByteBuffer
 import java.nio.IntBuffer
 
 @CObject("テキスト", "1976D2FF", "img/ic_text.png")
-class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
+class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
     override val id = "citrus/text"
     override val name = "テキスト"
 
@@ -63,7 +64,7 @@ class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
         text.valueProperty.addListener { _, _, _ -> updateTexture() }
 
         displayName = "[テキスト]"
-        ProjectRenderer.invoke(true, {
+        ProjectRenderer.invoke(true) {
             val b = IntBuffer.allocate(1)
             it.gl.glGenTextures(1, b)
             textureID = b.get()
@@ -74,7 +75,7 @@ class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
             it.gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
             Platform.runLater { updateTexture() }
             false
-        })
+        }
     }
 
     private fun updateTexture() {
@@ -105,18 +106,21 @@ class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
         val params = SnapshotParameters()
         params.fill = Color.TRANSPARENT
         t.snapshot(params, w)
+        println("w ${w.width} h ${w.height}")
 
         val buf = ByteBuffer.allocate(t.boundsInLocal.width.toInt() * t.boundsInLocal.height.toInt() * 4)
 
         w.pixelReader.getPixels(0, 0, w.width.toInt(), w.height.toInt(), PixelFormat.getByteBgraInstance(), buf, t.boundsInLocal.width.toInt() * 4)
 
-        ProjectRenderer.invoke(true, {
+        ProjectRenderer.invoke(true) {
             it.gl.glBindTexture(GL.GL_TEXTURE_2D, textureID)
             it.gl.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, t.boundsInLocal.width.toInt(), t.boundsInLocal.height.toInt()
                     , 0, GL.GL_BGRA, GL.GL_UNSIGNED_BYTE, buf)
             it.gl.glBindTexture(GL.GL_TEXTURE_2D, 0)
+
+            bufferSize = Size(w.width, w.height)
             true
-        })
+        }
         displayName = "[テキスト] ${text.value.replace("\n", " ")}"
     }
 

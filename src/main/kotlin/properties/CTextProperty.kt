@@ -17,7 +17,9 @@ class CTextProperty(def: String = "") : CitrusProperty<String> {
 
     init {
         textArea.text = def
+        value = def
         textArea.prefWidth = 20.0
-        textArea.textProperty().addListener { _, _, n -> value = n.toString() }
+        //textArea.textProperty().addListener { _, _, n -> value = n.toString() }
+        textArea.textProperty().bindBidirectional(valueProperty)
     }
 }

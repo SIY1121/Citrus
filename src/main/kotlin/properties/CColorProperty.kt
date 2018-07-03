@@ -19,9 +19,10 @@ open class CColorProperty(def : Color = Color.WHITE) : CitrusProperty<Color> {
 
     init{
         property.value = def
-        picker.setOnAction {
-            value = picker.value
-        }
+
+        picker.valueProperty().bindBidirectional(valueProperty)
     }
+
+
 
 }

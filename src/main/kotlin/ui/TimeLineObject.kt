@@ -1,5 +1,6 @@
 package ui
 
+import annotation.CEffect
 import annotation.CObject
 import javafx.event.EventHandler
 import javafx.geometry.Insets
@@ -9,6 +10,7 @@ import javafx.scene.effect.DropShadow
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import annotation.CProperty
+import effect.EffectManager
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
 import javafx.scene.image.Image
@@ -279,9 +281,30 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             editWindowRoot.children.add(accordion)
         }
 
+        val menu = ContextMenu()
+        if (cObject is DrawableObject)
+            EffectManager.graphicsEffects.forEach { t, u ->
+                val item = MenuItem((u.annotations.first { it is CEffect } as CEffect).name)
+                item.setOnAction { }
+                menu.items.add(item)
+            }
+        else if (cObject is Audio)
+            EffectManager.audioEffects.forEach { t, u ->
+                val item = MenuItem((u.annotations.first { it is CEffect } as CEffect).name)
+                item.setOnAction { }
+                menu.items.add(item)
+            }
+
+        editWindowRoot.children.add(Button("+").apply {
+            setOnMouseClicked {
+                println("clicked")
+                menu.show(this, it.screenX, it.screenY)
+            }
+        })
+
         cObject.propertyChangedListener = object : CitrusObject.PropertyChangedListener {
             override fun onPropertyChanged() {
-                if (!timelineController.playing)
+                if (!timelineController.playing && !timelineController.projectRenderer.encoding)
                     timelineController.projectRenderer.renderPreview(timelineController.currentFrame)
             }
         }
@@ -326,7 +349,9 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         popupRoot.children.add(Label("コピー"))
         val divideLabel = Label("分割")
         divideLabel.setOnMouseClicked {
-            timelineController.addObject(cObject.javaClass, cObject.layer, null, timelineController.currentFrame, cObject.end)
+            val newObj = cObject.clone(timelineController.currentFrame, cObject.end)
+            newObj.setupProperties()
+            timelineController.addObject(cObject.javaClass, cObject.layer, null, timelineController.currentFrame, cObject.end, newObj)
             cObject.end = timelineController.currentFrame
             onScaleChanged()
         }

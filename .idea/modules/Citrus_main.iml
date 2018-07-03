@@ -43,37 +43,38 @@
     <orderEntry type="library" name="Gradle: org.bytedeco:javacv-platform:1.4.1" level="project" />
     <orderEntry type="library" name="Gradle: org.jogamp.gluegen:gluegen-rt:2.3.2" level="project" />
     <orderEntry type="library" name="Gradle: org.jogamp.jogl:jogl-all:2.3.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.json:json:20180130" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.2.50" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.2.50" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.gluegen:gluegen-rt:natives-linux-amd64:2.3.2" level="project" />
-    <orderEntry type="library" name="Gradle: pl.edu.icm:JLargeArrays:1.5" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.2.50" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.gluegen:gluegen-rt:natives-linux-armv6:2.3.2" level="project" />
+    <orderEntry type="library" name="Gradle: pl.edu.icm:JLargeArrays:1.5" level="project" />
     <orderEntry type="library" name="Gradle: org.apache.commons:commons-math3:3.5" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco:javacv:1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.gluegen:gluegen-rt:natives-linux-armv6hf:2.3.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flandmark-platform:1.07-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco:javacv:1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.gluegen:gluegen-rt:natives-linux-i586:2.3.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:opencv-platform:3.4.1-1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.gluegen:gluegen-rt:natives-macosx-universal:2.3.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:ffmpeg-platform:3.4.2-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flandmark-platform:1.07-1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.gluegen:gluegen-rt:natives-windows-amd64:2.3.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flycapture-platform:2.11.3.121-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:opencv-platform:3.4.1-1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.gluegen:gluegen-rt:natives-windows-i586:2.3.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:libdc1394-platform:2.2.5-1.4.1" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:libfreenect-platform:0.5.3-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:ffmpeg-platform:3.4.2-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flycapture-platform:2.11.3.121-1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-linux-amd64:2.3.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:libfreenect2-platform:0.2.0-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:libdc1394-platform:2.2.5-1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-linux-armv6:2.3.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:librealsense-platform:1.12.1-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:libfreenect-platform:0.5.3-1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-linux-armv6hf:2.3.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:videoinput-platform:0.200-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:libfreenect2-platform:0.2.0-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:librealsense-platform:1.12.1-1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-linux-i586:2.3.2" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-macosx-universal:2.3.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:artoolkitplus-platform:2.3.1-1.4.1" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flandmark:1.07-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:videoinput-platform:0.200-1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-windows-amd64:2.3.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flandmark:android-arm:1.07-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:artoolkitplus-platform:2.3.1-1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.jogl:jogl-all:natives-windows-i586:2.3.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flandmark:1.07-1.4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flandmark:android-arm:1.07-1.4.1" level="project" />
     <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flandmark:android-arm64:1.07-1.4.1" level="project" />
     <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flandmark:android-x86:1.07-1.4.1" level="project" />
     <orderEntry type="library" name="Gradle: org.bytedeco.javacpp-presets:flandmark:android-x86_64:1.07-1.4.1" level="project" />

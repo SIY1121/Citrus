@@ -74,13 +74,16 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
 
     private var samplesPerFrame = 0
 
+    private val clipRect = Rectangle()
+
     init {
         file.valueProperty.addListener { _, _, n -> onFileLoad(n.toString()) }
         displayName = "[音声]"
+        uiObject?.widthProperty()?.addListener { _, _, n -> clipRect.width = n.toDouble() }
     }
 
-    override fun onFileDropped(file: String) {
-        onFileLoad(file)
+    override fun onFileDropped(f: String) {
+        file.value = f
     }
 
     private fun onFileLoad(file: String) {
@@ -179,7 +182,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                         //println("read $readed <- $read")
                         readed += read
                     }
-                    oldFrame = frame
+                    oldFrame = frame + startPos.value.toInt()
 
                     return result.map { it * 0.97f * volume.value.toFloat() }.toFloatArray()
                 }
@@ -189,8 +192,15 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     }
 
     private fun cacheWaveData(dialog: Stage) {
+
+        //キャッシュ済みの場合
+        if (waveLevelDatas[file.value] != null) {
+            waveLevelData = waveLevelDatas[file.value] ?: throw Exception("キャッシュ済みの波形データの取得に失敗しました")
+            return
+        }
+
         val progressBar = dialog.scene.lookup("#progressBar") as ProgressBar
-        waveFormCanvas.height = 30.0
+
         waveLevelData = ByteArray(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution).toInt())
 
 
@@ -235,15 +245,21 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
                 progressBar.progress = (grabber?.timestamp ?: 0L) / (grabber?.lengthInTime ?: 1L).toDouble()
             }
         }
+        //キャッシュを行う
+        waveLevelDatas[file.value] = waveLevelData
         grabber?.timestamp = 0L
+        println("dataSize ${waveLevelData.size}")
 
     }
 
     private fun setupWaveformCanvas() {
         Platform.runLater {
-            uiObject?.timelineController?.hScrollBar?.valueProperty()?.addListener({ _, _, _ ->
+
+            waveFormCanvas.height = 30.0
+
+            uiObject?.timelineController?.hScrollBar?.valueProperty()?.addListener { _, _, _ ->
                 renderWaveform()
-            })
+            }
             waveFormCanvas.width = uiObject?.timelineController?.hScrollBar?.width ?: 0.0
             uiObject?.timelineController?.hScrollBar?.widthProperty()?.addListener { _, _, n ->
                 waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width ?: 0.0, (uiObject?.width
@@ -268,27 +284,45 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     private fun renderWaveform() {
         //冗長なのを防ぐ
         val offsetX = uiObject?.timelineController?.offsetX ?: 0.0
+        val viewportWidth = uiObject?.timelineController?.hScrollBar?.width ?: 0.0
         //offsetは通常正だが念の為
         if (offsetX >= 0) {
-            waveFormCanvas.layoutX = Math.max(offsetX - (uiObject?.layoutX ?: 0.0), 0.0)
-            waveFormCanvas.width = Math.min(uiObject?.timelineController?.hScrollBar?.width
-                    ?: 0.0, (uiObject?.width ?: 1.0) - waveFormCanvas.layoutX)
-
-
-            val startSec = Math.max(((offsetX - (uiObject?.layoutX
-                    ?: 0.0)) / TimelineController.pixelPerFrame) / Main.project.fps + (startPos.value.toDouble() / Main.project.fps), 0.0)
-            val pixelPerData = (Main.project.fps * TimelineController.pixelPerFrame) * resolution
-            var x = 0.0
-            var i = 0
+            //オブジェクトブロックのx座標
+            val uix = uiObject?.layoutX ?: 0.0
+            val uiw = uiObject?.width ?: 0.0
+            //音声レベルブロック1個あたりの幅px
+            val pixelPerBlock = TimelineController.pixelPerFrame * Main.project.fps * resolution
             val g = waveFormCanvas.graphicsContext2D
+
             g.clearRect(0.0, 0.0, waveFormCanvas.width, waveFormCanvas.height)
+
+            waveFormCanvas.layoutX = Math.max(offsetX - uix, 0.0)
+            waveFormCanvas.width = Math.min(viewportWidth, uiw - waveFormCanvas.layoutX)
+
+            //描画起点のx座標(ローカル座標）
+            val scrolledX = waveFormCanvas.layoutX
+            //波形表示開始位置sec
+            var startInSec = scrolledX / TimelineController.pixelPerFrame / Main.project.fps
+            //波形表示終了位置sec
+            var endInSec = (scrolledX + Math.min(viewportWidth, uiw - scrolledX)) / TimelineController.pixelPerFrame / Main.project.fps
+
+            println("s $startInSec e $endInSec")
+
+            //再生位置パラメータ補正
+            startInSec += startPos.value.toDouble() / Main.project.fps
+            endInSec += startPos.value.toDouble() / Main.project.fps
+
+            //波形表示開始位置をサンプルのインデックスで
+            val startInBlock = startInSec / resolution
+            //波形表示終了位置をサンプルのインデックスで
+            val endInBlock = endInSec / resolution
+
             g.fill = Color.WHITE
-            while (x < waveFormCanvas.width && (startSec / resolution).toInt() + i < waveLevelData.size) {
-                val level = waveLevelData[(startSec / resolution).toInt() + i] / Byte.MAX_VALUE.toDouble() * waveFormCanvas.height
-                g.fillRect(x, waveFormCanvas.height - level, pixelPerData, level)
-                x += pixelPerData
-                i++
+            for (i in 0 until endInBlock.toInt() - startInBlock.toInt()) {
+                val level = waveLevelData[startInBlock.toInt() + i] / Byte.MAX_VALUE.toDouble() * waveFormCanvas.height
+                g.fillRect(i * pixelPerBlock, waveFormCanvas.height - level, pixelPerBlock, level)
             }
+
         }
     }
 
@@ -297,5 +331,16 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             end = start + audioLength - startPos.value.toInt()
 
         uiObject?.onScaleChanged()
+    }
+
+    override fun clone(startPos: Int, endPos: Int): CitrusObject {
+        val newObj = super.clone(startPos, endPos) as Audio
+        val offset = startPos - start
+        newObj.startPos.value = offset
+        return newObj
+    }
+
+    companion object {
+        val waveLevelDatas = HashMap<String, ByteArray>()
     }
 }

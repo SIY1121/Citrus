@@ -18,7 +18,9 @@
         <top>
             <MenuBar fx:id="menuBar">
                 <Menu text="ファイル">
-                    <MenuItem text="開く" />
+                    <MenuItem text="開く" onAction="#onOpen"/>
+                    <MenuItem text="上書き保存" onAction="#onOverwrite"/>
+                    <MenuItem text="保存" onAction="#onSave"/>
                     <MenuItem onAction="#onOutput" text="出力" />
                 </Menu>
                 <Menu text="編集" />

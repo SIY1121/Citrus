@@ -1,5 +1,6 @@
 package ui
 
+import javafx.collections.ObservableList
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.fxml.FXMLLoader
@@ -7,6 +8,7 @@ import javafx.fxml.Initializable
 import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.control.ListView
+import javafx.stage.FileChooser
 import javafx.stage.Modality
 import javafx.stage.Stage
 import java.net.URL
@@ -20,6 +22,7 @@ class Welcome : Initializable {
     override fun initialize(location: URL?, resources: ResourceBundle?) {
         listView.items.addAll("project1", "project2")
     }
+    //TODO 最近のプロジェクトを実装する
 
     fun clickNewProject(actionEvent: ActionEvent) {
         val dialog = WindowFactory.createWindow("layout/createProject.fxml")
@@ -39,5 +42,15 @@ class Welcome : Initializable {
         stage.initOwner(listView.scene.window)
         stage.initModality(Modality.WINDOW_MODAL)
         stage.show()
+    }
+
+    fun onProjectOpen(actionEvent: ActionEvent) {
+        val dialog = FileChooser()
+        dialog.extensionFilters .add(FileChooser.ExtensionFilter("Citrusプロジェクトファイル","*.cpf"))
+        val file = dialog.showOpenDialog(listView.scene.window) ?: return
+        Main.project.initialized = true
+        Main.project.load(file.toString())
+        listView.scene.window.hide()
+
     }
 }

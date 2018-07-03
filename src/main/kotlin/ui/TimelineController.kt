@@ -72,6 +72,12 @@ class TimelineController : Initializable {
                     caret.layoutX = field * pixelPerFrame
                     topCaret.layoutX = field * pixelPerFrame - offsetX
                     polygonCaret.layoutX = field * pixelPerFrame - offsetX
+
+                    if (topCaret.layoutX >= timelineAxis.width)
+                        if (playing) layerScrollPane.hvalue += layerScrollPane.width / (layerVBox.width - layerScrollPane.viewportBounds.width)
+                        else layerScrollPane.hvalue += 0.05
+                    else if (topCaret.layoutX < 0)
+                        layerScrollPane.hvalue -= 0.05
                 }
 
             }
@@ -179,6 +185,7 @@ class TimelineController : Initializable {
         timelineAxisClipRectangle.widthProperty().bind(timelineAxis.widthProperty())
 
 
+
         layerScrollPane.setOnKeyPressed {
             when (it.code) {
                 KeyCode.SPACE -> {
@@ -186,10 +193,14 @@ class TimelineController : Initializable {
                     else stop()
                 }
                 KeyCode.RIGHT -> {
+                    playing = true//再生中にしないとキーフレームが設定されているときに複数回描画されてしまう
                     currentFrame++
+                    playing = false
                 }
                 KeyCode.LEFT -> {
+                    playing = true//再生中にしないと(ry
                     currentFrame--
+                    playing = false
                 }
                 KeyCode.DELETE -> {
                     allTimelineObjects.filter { it.strictSelected }.forEach {
@@ -301,10 +312,11 @@ class TimelineController : Initializable {
         caret.endY = layerCount * layerHeight
     }
 
-    fun addObject(clazz: Class<*>, layerIndex: Int, file: String? = null, start: Int? = null, end: Int? = null) {
+    fun addObject(clazz: Class<*>, layerIndex: Int, file: String? = null, start: Int? = null, end: Int? = null, newObj: CitrusObject? = null) {
         val layerPane = layerVBox.children[layerIndex] as Pane
 
-        val cObject = clazz.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(layerIndex, selectedScene) as CitrusObject
+        val cObject = newObj ?: clazz.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(layerIndex, selectedScene) as CitrusObject
+
         cObject.setupProperties()
         val o = TimeLineObject(cObject, this)
         o.prefHeight = layerHeight * 2
@@ -346,6 +358,7 @@ class TimelineController : Initializable {
 
     fun seekTo(frame: Int) {
         caret.layoutX = frame * pixelPerFrame
+        currentFrame = frame
     }
 
     private fun drawAxis() {
@@ -440,7 +453,9 @@ class TimelineController : Initializable {
 
         if (selectedObjects.isEmpty() && mouseEvent.button == MouseButton.PRIMARY) {
             //parentController.rightPane.children.clear()
+            playing = true//再生中にしないと、キーフレームが打たれている際に複数回描画してしまう
             currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
+            playing = false
         }
     }
 
@@ -493,7 +508,9 @@ class TimelineController : Initializable {
                 }
             }
         else {
+            playing = true
             currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
+            playing = false
         }
 
     }
@@ -618,7 +635,7 @@ class TimelineController : Initializable {
                 left = 1.0 / Main.project.fps * 1000.0 - (System.currentTimeMillis() - o)
 
 
-                Thread.sleep(Math.max(left.toLong(), 0L))
+                Thread.sleep(Math.max(left.toLong() / 2, 0L))
                 //else
                 //    start-=left.toInt() フレームスキップを行わない場合
 //                if (fpsCount == 60) {
@@ -640,7 +657,7 @@ class TimelineController : Initializable {
     }
 
     fun topPaneOnMousePressed(mouseEvent: MouseEvent) {
-       currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
+        currentFrame = (mouseEvent.x / pixelPerFrame).toInt()
     }
 
     fun topPaneOnMouseDragged(mouseEvent: MouseEvent) {

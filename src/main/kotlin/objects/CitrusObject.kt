@@ -1,7 +1,7 @@
 package objects
 
 import annotation.CProperty
-import effects.Effect
+import effect.Effect
 import properties.CitrusAnimatableProperty
 import properties.CitrusProperty
 import ui.Main
@@ -71,11 +71,13 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
     var layer: Int = defLayer
         set(value) {
             //変更された場合
-            if (field != value) {
+            if (field != value && value != -1) {
 
-                Main.project.scene[scene][field].remove(this)
+                if (scene != -1 && field != -1)
+                    Main.project.scene[scene][field].remove(this)
 
-                Main.project.scene[scene][value].add(this)
+                if (scene != -1 && value != -1)
+                    Main.project.scene[scene][value].add(this)
                 //Statics.project.Layer[value].sortBy { it.start }
                 //TODO ソートは保留
 
@@ -87,12 +89,15 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
         }
 
     var scene: Int = defScene
-        private set(value) {
+        set(value) {
             //変更された場合
-            if (field != value) {
-                Main.project.scene[field][layer].remove(this)
+            if (field != value && value != -1) {
 
-                Main.project.scene[value][layer].add(this)
+                if (field != -1 && layer != -1)
+                    Main.project.scene[field][layer].remove(this)
+
+                if (value != -1 && layer != -1)
+                    Main.project.scene[value][layer].add(this)
                 //Statics.project.Layer[value].sortBy { it.start }
                 //TODO ソートは保留
 
@@ -101,6 +106,8 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
 
             field = value
         }
+
+    val memberProperties: MutableList<KProperty1<CitrusObject, *>> = ArrayList()
 
     /**
      * アニメーション可能なプロパティを抜き出す
@@ -123,17 +130,45 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
 
     fun setupProperties() {
         this.javaClass.kotlin.memberProperties.filter {
-            println(it.name + " " + it.returnType)
+            //println(it.name + " " + it.returnType)
             it.annotations.any { it is CProperty } && Class.forName(it.returnType.toString()).interfaces.any { it.name == "properties.CitrusProperty" || it.name == "properties.CitrusAnimatableProperty" }
-        }.forEach {
+        }.forEach { memberProperties.add(it) }
+
+        memberProperties.forEach {
             allProperties.add(it.get(this) as CitrusProperty<*>)
         }
+
         allProperties.forEach {
             if (it is CitrusAnimatableProperty<*>)
                 animatableProperties.add(it)
-            //TODO AnimatableDoublePropertyでユーザーによるイベントの発火かアニメーションによる発火かを見分ける機構が必要
             it.valueProperty.addListener { _, _, _ -> propertyChangedListener?.onPropertyChanged() }
         }
+    }
+
+    open fun clone(startPos: Int, endPos: Int): CitrusObject {
+        val newObj = this::class.java.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(layer, scene) as CitrusObject
+        newObj.layer = layer
+        newObj.scene = scene
+        newObj.start = startPos
+        newObj.end = endPos
+
+        memberProperties.forEach {
+            println(it)
+            val p = it.get(newObj) as CitrusProperty<Any>
+            if (p is CitrusAnimatableProperty<*>) {
+                val keyFrames = (it.get(this) as CitrusAnimatableProperty<Any>).keyFrames
+                if (keyFrames.size > 0)
+                    keyFrames.forEach {
+                        (p as CitrusAnimatableProperty<Any>).keyFrames.add(it)
+                    }
+                else
+                    (p as CitrusAnimatableProperty<Any>).valueProperty.value = (it.get(this) as CitrusAnimatableProperty<Any>).valueProperty.value
+
+            } else {
+                p.valueProperty.value = (it.get(this) as CitrusProperty<Any>).value
+            }
+        }
+        return newObj
     }
 
 }

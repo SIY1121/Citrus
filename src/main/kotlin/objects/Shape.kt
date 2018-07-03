@@ -4,13 +4,14 @@ import annotation.CObject
 import annotation.CProperty
 import com.jogamp.opengl.GL2
 import javafx.scene.paint.Color
+import org.opencv.core.Size
 import properties.CAnimatableDoubleProperty
 import properties.CColorProperty
 import properties.CSelectableProperty
 import ui.Main
 
 @CObject("図形", "607D8BFF", "img/ic_shape.png")
-class Shape(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
+class Shape(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
     enum class Type {
         Ellipse, Rectangle, Triangle, Background
     }
@@ -37,6 +38,8 @@ class Shape(defLayer: Int, defScene: Int) : DrawableObject(defLayer,defScene) {
 
     override fun onDraw(gl: GL2, mode: Drawable.DrawMode, frame: Int) {
         super.onDraw(gl, mode, frame)
+
+        bufferSize = Size(size.value.toDouble(), size.value.toDouble())
 
         gl.glColor4d(color.value.red, color.value.green, color.value.blue, color.value.opacity)
         when (selectableProperty.value.toInt().toType()) {
