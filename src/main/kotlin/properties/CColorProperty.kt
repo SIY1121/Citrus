@@ -23,4 +23,6 @@ open class CColorProperty(def : Color = Color.WHITE) : CitrusProperty<Color> {
         picker.valueProperty().bindBidirectional(valueProperty)
     }
 
+
+
 }

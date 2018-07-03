@@ -140,7 +140,17 @@ class Controller : Initializable {
 
     }
 
+
+
     fun onTest(actionEvent: ActionEvent) {
         WindowFactory.ShowTestScene()
+    }
+
+    fun onSave(actionEvent: ActionEvent) {
+        Main.project.save()
+    }
+
+    fun onOpen(actionEvent: ActionEvent) {
+        Main.project.load("project.json")
     }
 }
