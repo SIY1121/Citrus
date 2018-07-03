@@ -9,6 +9,7 @@ import org.json.JSONObject
 import properties.CitrusAnimatableProperty
 import properties.CitrusProperty
 import properties.KeyFrame
+import ui.Main
 import ui.TimelineController
 import java.io.*
 import kotlin.reflect.full.starProjectedType
@@ -21,6 +22,7 @@ class Project {
     var fps = 60
     var sampleRate = 48000
     var audioChannel = 2
+    var path = ""
 
     init {
         scene.add(Scene())
@@ -85,7 +87,7 @@ class Project {
 
         json.put("scene", sceneJsonArray)
 
-        val fos = FileOutputStream("project.json").bufferedWriter()
+        val fos = FileOutputStream(Main.project.path).bufferedWriter()
         fos.write(json.toString(4))
         fos.close()
 
@@ -169,5 +171,6 @@ class Project {
                 }
             }
         }
+        Main.project.path = file
     }
 }

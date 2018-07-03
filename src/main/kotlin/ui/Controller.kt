@@ -13,6 +13,7 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.control.*
 import javafx.scene.layout.*
 import javafx.scene.shape.Rectangle
+import javafx.stage.FileChooser
 import javafx.stage.Modality
 import javafx.stage.Stage
 import org.bytedeco.javacpp.avcodec
@@ -147,10 +148,22 @@ class Controller : Initializable {
     }
 
     fun onSave(actionEvent: ActionEvent) {
+        val dialog = FileChooser()
+        dialog.extensionFilters .add(FileChooser.ExtensionFilter("Citrusプロジェクトファイル","*.cpf"))
+        val file = dialog.showSaveDialog(rootPane.scene.window) ?: return
+        Main.project.path = file.toString()
         Main.project.save()
     }
 
     fun onOpen(actionEvent: ActionEvent) {
         Main.project.load("project.json")
+    }
+
+    fun onOverwrite(actionEvent: ActionEvent) {
+        if(Main.project.path.isEmpty()){
+            onSave(actionEvent)
+            return
+        }
+        Main.project.save()
     }
 }
