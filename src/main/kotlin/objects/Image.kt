@@ -3,6 +3,7 @@ package objects
 import annotation.CDroppable
 import annotation.CObject
 import annotation.CProperty
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import com.jogamp.opengl.util.texture.Texture
@@ -17,8 +18,11 @@ import java.io.File
 
 @CObject("画像", "00796BFF", "img/ic_photo.png")
 @CDroppable(["png", "jpg", "jpeg", "bmp", "gif", "tif"])
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class Image(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
 
+    //Jackson用
+    constructor():this(-1,-1)
 
     override val id = "citrus/image"
     override val name = "画像"
@@ -28,7 +32,7 @@ class Image(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
             FileChooser.ExtensionFilter("画像ファイル", "*.png", "*.jpg", ".*jpeg", "*.bmp", "*.gif", "*.tif")
     ))
 
-    var texture: Texture? = null
+    private var texture: Texture? = null
 
     init {
         file.valueProperty.addListener { _, _, n -> onFileLoad(n.toString()) }

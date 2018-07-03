@@ -1,11 +1,13 @@
 package project
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.jogamp.opengl.GL2
 import objects.AudioSampleProvider
 import objects.Drawable
 import ui.Main
 import java.awt.Frame
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class Scene : ArrayList<Layer>(), Drawable, AudioSampleProvider {
 
     private var oldAudioFrame = 0

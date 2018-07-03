@@ -1,5 +1,7 @@
 package ui
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.jogamp.opengl.awt.GLJPanel
 import javafx.beans.InvalidationListener
 import javafx.embed.swing.SwingNode
@@ -17,7 +19,11 @@ import javafx.stage.Modality
 import javafx.stage.Stage
 import org.bytedeco.javacpp.avcodec
 import org.bytedeco.javacpp.avformat
+import project.Project
 import project.ProjectRenderer
+import java.io.BufferedReader
+import java.io.FileReader
+import java.io.FileWriter
 import java.net.URL
 import java.util.*
 
@@ -36,27 +42,27 @@ class Controller : Initializable {
     @FXML
     lateinit var glCanvas: SwingNode
     @FXML
-    lateinit var canvasWrapper : Pane
+    lateinit var canvasWrapper: Pane
     @FXML
-    lateinit var rightPane : AnchorPane
+    lateinit var rightPane: AnchorPane
     @FXML
-    lateinit var rightPaneWrapper : ScrollPane
+    lateinit var rightPaneWrapper: ScrollPane
 
     @FXML
     lateinit var volumeBar: Canvas
     @FXML
-    lateinit var volumeBarWrapper : Pane
+    lateinit var volumeBarWrapper: Pane
     @FXML
-    lateinit var volumeLeftLight : Rectangle
+    lateinit var volumeLeftLight: Rectangle
     @FXML
-    lateinit var volumeRightLight : Rectangle
+    lateinit var volumeRightLight: Rectangle
 
 
-    lateinit var canvas : GLJPanel
+    lateinit var canvas: GLJPanel
 
-    lateinit var welcomeScreen : Stage
+    lateinit var welcomeScreen: Stage
 
-    var stage : Stage? = null
+    var stage: Stage? = null
 
     override fun initialize(location: URL?, resources: ResourceBundle?) {
         println("initialize")
@@ -72,29 +78,29 @@ class Controller : Initializable {
         volumeBarWrapper.heightProperty().addListener { _, _, n ->
             volumeBar.height = n.toDouble()
         }
-        rightPaneWrapper.widthProperty()?.addListener{_,_,n->
+        rightPaneWrapper.widthProperty()?.addListener { _, _, n ->
             rightPane.prefWidth = n.toDouble() - 7.0
         }
-        SplashController.notifyProgress(0.7,"OpenGLを初期化中...")
+        SplashController.notifyProgress(0.7, "OpenGLを初期化中...")
 
     }
 
-    fun showWelcomeScreen(){
+    fun showWelcomeScreen() {
         welcomeScreen = WindowFactory.createWindow("layout/welcome.fxml")
         welcomeScreen.initOwner(stage)
         welcomeScreen.initModality(Modality.WINDOW_MODAL)
         welcomeScreen.showAndWait()
     }
 
-    val listener = InvalidationListener{
-        val w = canvasWrapper.width - Main.project.width.toDouble()/Main.project.height*canvasWrapper.height
-        AnchorPane.setLeftAnchor(glCanvas,w/2.0)
-        AnchorPane.setRightAnchor(glCanvas,w/2.0)
+    val listener = InvalidationListener {
+        val w = canvasWrapper.width - Main.project.width.toDouble() / Main.project.height * canvasWrapper.height
+        AnchorPane.setLeftAnchor(glCanvas, w / 2.0)
+        AnchorPane.setRightAnchor(glCanvas, w / 2.0)
     }
 
     fun onVersionInfo(actionEvent: ActionEvent) {
         val stage = Stage()
-        stage.scene  = Scene(FXMLLoader.load<Parent>(ClassLoader.getSystemResource("layout/about.fxml")))
+        stage.scene = Scene(FXMLLoader.load<Parent>(ClassLoader.getSystemResource("layout/about.fxml")))
         stage.isResizable = false
         stage.title = "Citrusについて"
         stage.initOwner(rootPane.scene.window)
@@ -105,21 +111,20 @@ class Controller : Initializable {
     fun onCodecInfo(actionEvent: ActionEvent) {
         avcodec.avcodec_register_all()
         var codec = avcodec.av_codec_next(null)
-        while (codec!=null)
-        {
-            println(codec.long_name().getString("ASCII") + " - " + codec.name().getString("ASCII") + " - " + codec.id() + "/"+codec.type())
+        while (codec != null) {
+            println(codec.long_name().getString("ASCII") + " - " + codec.name().getString("ASCII") + " - " + codec.id() + "/" + codec.type())
             codec = avcodec.av_codec_next(codec)
         }
         avformat.av_register_all()
         println("--format--")
         var format = avformat.av_oformat_next(null)
-        while (format!=null){
-            try{
+        while (format != null) {
+            try {
                 println(format.long_name().getString("ASCII") + " " + format.mime_type().getString("ASCII"))
                 //if(format.mime_type().getString("ASCII").contains("image/")){
                 //    format.extensions().getString("ASCII").split(",").forEach { print("\"$it\",") }
                 //}
-            }catch (ex : Exception){
+            } catch (ex: Exception) {
                 //ex.printStackTrace()
             }
 
@@ -142,5 +147,23 @@ class Controller : Initializable {
 
     fun onTest(actionEvent: ActionEvent) {
         WindowFactory.ShowTestScene()
+    }
+
+    fun onSave(actionEvent: ActionEvent) {
+        val json = ObjectMapper().apply {
+            enable(SerializationFeature.INDENT_OUTPUT)
+            disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+        }.writeValueAsString(Main.project)
+
+        val fw = FileWriter("project.cpf")
+        fw.write(json)
+        fw.close()
+
+    }
+
+    fun onOpen(actionEvent: ActionEvent) {
+        val json = BufferedReader(FileReader("project.cpf")).readText()
+        Main.project = ObjectMapper().readValue(json, Project::class.java)
+        println(json)
     }
 }

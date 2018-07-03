@@ -3,6 +3,8 @@ package objects
 import annotation.CDroppable
 import annotation.CObject
 import annotation.CProperty
+import com.fasterxml.jackson.annotation.JsonTypeId
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.Alert
@@ -36,7 +38,11 @@ import javax.sound.sampled.SourceDataLine
 
 @CObject("音声", "388E3CFF", "img/ic_music.png")
 @CDroppable(["ac3", "aac", "adts", "aif", "aiff", "afc", "aifc", "amr", "au", "bit", "caf", "dts", "eac3", "flac", "g722", "tco", "rco", "gsm", "lbc", "latm", "loas", "mka", "mp2", "m2a", "mpa", "mp3", "oga", "oma", "opus", "spx", "tta", "voc", "wav", "wv"])
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), AudioSampleProvider {
+
+    //Jackson用
+    constructor():this(-1,-1)
 
     @CProperty("ファイル", 0)
     val file = CFileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))

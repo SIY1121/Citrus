@@ -1,11 +1,12 @@
 package project
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.jogamp.opengl.GL2
 import objects.AudioSampleProvider
 import objects.CitrusObject
 import objects.Drawable
 import objects.DrawableObject
-
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class Layer : ArrayList<CitrusObject>(), Drawable, AudioSampleProvider {
 
     private var oldVideoFrame = 0

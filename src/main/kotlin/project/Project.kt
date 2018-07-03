@@ -1,5 +1,8 @@
 package project
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class Project{
     var initialized = false
     val scene: MutableList<Scene> = ArrayList()

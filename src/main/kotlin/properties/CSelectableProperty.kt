@@ -1,5 +1,7 @@
 package properties
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import javafx.beans.property.Property
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.scene.control.ChoiceBox
@@ -7,6 +9,7 @@ import javafx.scene.control.ChoiceBox
 /**
  * 選択型プロパティ
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class CSelectableProperty(val list: List<String>) : CitrusProperty<Number> {
     private val property = SimpleIntegerProperty()
     override val valueProperty: Property<Number>
@@ -14,6 +17,7 @@ class CSelectableProperty(val list: List<String>) : CitrusProperty<Number> {
 
     private val choice = ChoiceBox<String>()
     override val uiNode: ChoiceBox<String>
+        @JsonIgnore
         get() = choice
 
     init {

@@ -1,6 +1,9 @@
 package objects
 
 import annotation.CProperty
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import effect.Effect
 import properties.CitrusAnimatableProperty
 import properties.CitrusProperty
@@ -13,10 +16,15 @@ import kotlin.reflect.full.memberProperties
  * タイムラインに並ぶオブジェクトのスーパークラス
  * 格納先配列へのバインディング実装済み
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 abstract class CitrusObject(defLayer: Int, defScene: Int) {
+
+    //Jackson用
+    constructor() : this(-1, -1)
 
     open val id = "citrus"
     open val name = "CitrusObject"
+
     var displayName = "CitrusObject"
         set(value) {
             field = value
@@ -27,6 +35,7 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
 
     val linkedObjects: MutableList<CitrusObject> = ArrayList()
 
+    @JsonIgnore
     var uiObject: TimeLineObject? = null
 
     interface DisplayNameChangeListener {
@@ -37,8 +46,9 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
         fun onPropertyChanged()
     }
 
+    @JsonIgnore
     var displayNameChangeListener: DisplayNameChangeListener? = null
-
+    @JsonIgnore
     var propertyChangedListener: PropertyChangedListener? = null
 
     /**
@@ -71,11 +81,13 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
     var layer: Int = defLayer
         set(value) {
             //変更された場合
-            if (field != value) {
+            if (field != value && value != -1) {
 
-                Main.project.scene[scene][field].remove(this)
+                if (field != -1 && scene != -1)
+                    Main.project.scene[scene][field].remove(this)
 
-                Main.project.scene[scene][value].add(this)
+                if (value != -1 && scene != -1)
+                    Main.project.scene[scene][value].add(this)
                 //Statics.project.Layer[value].sortBy { it.start }
                 //TODO ソートは保留
 
@@ -89,10 +101,13 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
     var scene: Int = defScene
         private set(value) {
             //変更された場合
-            if (field != value) {
-                Main.project.scene[field][layer].remove(this)
+            if (field != value && value != -1) {
 
-                Main.project.scene[value][layer].add(this)
+                if (field != -1 && layer != -1)
+                    Main.project.scene[field][layer].remove(this)
+
+                if (value != -1 && layer != -1)
+                    Main.project.scene[value][layer].add(this)
                 //Statics.project.Layer[value].sortBy { it.start }
                 //TODO ソートは保留
 
@@ -102,13 +117,15 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
             field = value
         }
 
+    @JsonIgnore
     val memberProperties: MutableList<KProperty1<CitrusObject, *>> = ArrayList()
 
     /**
      * アニメーション可能なプロパティを抜き出す
      */
+    @JsonIgnore
     val animatableProperties: MutableList<CitrusAnimatableProperty<*>> = ArrayList()
-
+    @JsonIgnore
     val allProperties: MutableList<CitrusProperty<*>> = ArrayList()
 
 

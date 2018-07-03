@@ -2,6 +2,7 @@ package objects
 
 import annotation.CObject
 import annotation.CProperty
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.jogamp.opengl.GL2
 import javafx.scene.paint.Color
 import org.opencv.core.Size
@@ -11,7 +12,12 @@ import properties.CSelectableProperty
 import ui.Main
 
 @CObject("図形", "607D8BFF", "img/ic_shape.png")
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class Shape(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
+
+    //Jackson用
+    constructor():this(-1,-1)
+
     enum class Type {
         Ellipse, Rectangle, Triangle, Background
     }

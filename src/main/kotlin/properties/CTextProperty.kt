@@ -1,5 +1,7 @@
 package properties
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import javafx.beans.property.Property
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.control.TextArea
@@ -7,12 +9,14 @@ import javafx.scene.control.TextArea
 /**
  * テキストを入力可能なプロパティ
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class CTextProperty(def: String = "") : CitrusProperty<String> {
     private val property = SimpleStringProperty()
     override val valueProperty: Property<String>
         get() = property
     private val textArea = TextArea()
     override val uiNode: TextArea
+        @JsonIgnore
         get() = textArea
 
     init {

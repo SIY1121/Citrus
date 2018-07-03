@@ -1,15 +1,20 @@
 package properties
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 
 /**
  * RGB補間でアニメーション可能なプロパティ
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class CAnimatableColorProperty : CColorProperty(), CitrusAnimatableProperty<Color> {
 
     private val _editPane = Pane()
+
     override val editPane: Pane
+        @JsonIgnore
         get() = _editPane
 
     override fun onTimelineScaleChanged() {

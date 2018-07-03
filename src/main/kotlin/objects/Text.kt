@@ -2,6 +2,7 @@ package objects
 
 import annotation.CObject
 import annotation.CProperty
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import javafx.application.Platform
@@ -20,7 +21,12 @@ import java.nio.ByteBuffer
 import java.nio.IntBuffer
 
 @CObject("テキスト", "1976D2FF", "img/ic_text.png")
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
+
+    //Jackson用
+    constructor():this(-1,-1)
+
     override val id = "citrus/text"
     override val name = "テキスト"
 
@@ -49,8 +55,8 @@ class Text(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
     val text = CTextProperty()
 
 
-    val t = javafx.scene.text.Text("text")
-    var textureID: Int = 0
+    private val t = javafx.scene.text.Text("text")
+    private var textureID: Int = 0
 
     init {
 

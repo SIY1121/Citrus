@@ -2,6 +2,7 @@ package objects
 
 import annotation.CObject
 import annotation.CProperty
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import effect.graphics.DrawableEffect
@@ -19,8 +20,12 @@ import util.USetupTexture
  * 座標、拡大率、透明度などをもつ
  */
 @CObject("描画")
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Drawable {
+
+
     var selected: Boolean = false
+
     var enabledSelectedOutline: Boolean = true
 
     var bufferSize: Size = Size(Main.project.width.toDouble(), Main.project.height.toDouble())
@@ -29,10 +34,10 @@ abstract class DrawableObject(defLayer: Int, defScene: Int) : CitrusObject(defLa
             initFrameBuffer()
         }
 
-    var frameBufferID = 0
-    var textureBufferID = 0
+    private var frameBufferID = 0
+    private var textureBufferID = 0
 
-    var setupFinished = false
+    private var setupFinished = false
 
     @CProperty("X", 0)
     val x = CAnimatableDoubleProperty()

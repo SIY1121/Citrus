@@ -1,5 +1,6 @@
 package properties
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import javafx.application.Platform
 import javafx.beans.property.Property
 import ui.CustomSlider
@@ -8,7 +9,7 @@ import ui.CustomSlider
  * 数値を持つプロパティの親クラス
  * スライダーUIをもつ
  */
-abstract class CNumberProperty(override val valueProperty: Property<Number>, _min: Number, _max: Number, var def: Number, _tick: Number) : CitrusProperty<Number> {
+abstract class CNumberProperty(@JsonIgnore override val valueProperty: Property<Number>, _min: Number, _max: Number, var def: Number, _tick: Number) : CitrusProperty<Number> {
 
     var min: Number
         get() = uiNode.min
@@ -31,6 +32,7 @@ abstract class CNumberProperty(override val valueProperty: Property<Number>, _mi
     private val slider = CustomSlider()
 
     override val uiNode: CustomSlider
+        @JsonIgnore
         get() = slider
 
     //TODO プロパティ側の max min をUIに反映させる

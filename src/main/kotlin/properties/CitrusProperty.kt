@@ -1,5 +1,9 @@
 package properties
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonIgnoreType
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import javafx.beans.property.Property
 import javafx.scene.Node
 

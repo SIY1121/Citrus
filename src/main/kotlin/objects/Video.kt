@@ -3,6 +3,7 @@ package objects
 import annotation.CDroppable
 import annotation.CObject
 import annotation.CProperty
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import javafx.application.Platform
@@ -39,7 +40,11 @@ import java.nio.ShortBuffer
 
 @CObject("動画", "F57C00", "img/ic_movie.png")
 @CDroppable(["asf", "wmv", "wma", "asf", "wmv", "wma", "avi", "flv", "h261", "h263", "m4v", "m4a", "ismv", "isma", "mkv", "mjpg", "mjpeg", "mp4", "mpg", "mpeg", "mpg", "mpeg", "m1v", "dvd", "vob", "vob", "ts", "m2t", "m2ts", "mts", "nut", "ogv", "webm", "chk"])
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
+
+    //Jackson用
+    constructor():this(-1,-1)
 
     override val id = "citrus/video"
     override val name = "動画"
@@ -50,23 +55,23 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
     @CProperty("開始位置", 1)
     val startPos = CIntegerProperty(min = 0)
 
-    var grabber: FFmpegFrameGrabber? = null
-    var isGrabberStarted = false
+    private var grabber: FFmpegFrameGrabber? = null
+    private var isGrabberStarted = false
 
-    var oldFrame = -100
-    var buf: Frame? = null
+    private var oldFrame = -100
+    private var buf: Frame? = null
 
-    var textureID: Int = 0
+    private var textureID: Int = 0
 
-    var videoLength = 0
+    private var videoLength = 0
 
-    var oldStart = 0
+    private var oldStart = 0
 
-    var thumbPane = Pane()
+    private var thumbPane = Pane()
 
-    var thumsTimestamp: MutableList<Long> = ArrayList()
+    private var thumsTimestamp: MutableList<Long> = ArrayList()
 
-    var rect = Rectangle()
+    private var rect = Rectangle()
 
     init {
         file.valueProperty.addListener { _, _, n -> onFileLoad(n.toString()) }

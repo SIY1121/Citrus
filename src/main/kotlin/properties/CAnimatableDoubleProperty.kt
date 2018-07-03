@@ -1,5 +1,7 @@
 package properties
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import interpolation.AccelerateDecelerateInterpolator
 import interpolation.Interpolator
 import interpolation.InterpolatorManager
@@ -22,10 +24,12 @@ import ui.TimelineController
 /**
  * 数値をアニメーションできるプロパティ
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class CAnimatableDoubleProperty(min: Double = Double.NEGATIVE_INFINITY, max: Double = Double.POSITIVE_INFINITY, def: Double = 0.0, tick: Double = 0.1) : CDoubleProperty(min, max, def, tick), CitrusAnimatableProperty<Number> {
 
     private val _editPane = Pane()
     override val editPane: Pane
+        @JsonIgnore
         get() = _editPane
 
     override fun onTimelineScaleChanged() {

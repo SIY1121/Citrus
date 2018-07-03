@@ -2,6 +2,7 @@ package objects
 
 import annotation.CObject
 import annotation.CProperty
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import javafx.stage.FileChooser
@@ -20,7 +21,12 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
 @CObject("波形", "00796BFF", "img/ic_music.png")
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 class AudioWaveform(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
+
+    //Jackson用
+    constructor():this(-1,-1)
+
     @CProperty("ファイル", 0)
     val file = CFileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", listOf("*.ac3", "*.aac", ".adts", "*.aif", "*.aiff", "*.afc", "*.aifc", "*.amr", "*.au", "*.bit", "*.caf", "*.dts", "*.eac3", "*.flac", "*.g722", "*.tco", "*.rco", "*.gsm", "*.lbc", "*.latm", "*.loas", "*.mka", "*.mp2", "*.m2a", "*.mpa", "*.mp3", "*.oga", "*.oma", "*.opus", "*.spx", "*.tta", "*.voc", "*.wav", "*.wv"))))
     @CProperty("開始位置", 1)
@@ -33,12 +39,12 @@ class AudioWaveform(defLayer: Int, defScene: Int) : DrawableObject(defLayer, def
     val maxHz = CAnimatableDoubleProperty(1.0, Double.POSITIVE_INFINITY, 1000.0, 1.0)
 
 
-    var grabber: FFmpegFrameGrabber? = null
-    var isGrabberStarted = false
-    var oldFrame = 0
+    private var grabber: FFmpegFrameGrabber? = null
+    private var isGrabberStarted = false
+    private var oldFrame = 0
     private var buf: Frame? = null
-    var vbo = 0
-    var samplesPerFrame = 0
+    private var vbo = 0
+    private var samplesPerFrame = 0
 
 
     init {
