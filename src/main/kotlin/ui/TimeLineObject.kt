@@ -291,7 +291,20 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         else if (cObject is Audio)
             EffectManager.audioEffects.forEach { t, u ->
                 val item = MenuItem((u.annotations.first { it is CEffect } as CEffect).name)
-                item.setOnAction { }
+                item.setOnAction {
+                    val grid = GridPane()
+                    val accordion = TitledPane(item.text, grid)
+                    grid.columnConstraints.addAll(ColumnConstraints(), ColumnConstraints())
+                    grid.prefWidthProperty().bind(accordion.widthProperty())
+                    grid.hgap = 10.0
+                    grid.vgap = 10.0
+                    accordion.isAnimated = false
+
+                    //grid.add(Label(name), 0, i)
+                    //grid.add(v.uiNode, 1, i)
+
+                    editWindowRoot.children.add(accordion)
+                }
                 menu.items.add(item)
             }
 

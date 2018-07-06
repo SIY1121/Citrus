@@ -3,6 +3,7 @@ package objects
 import annotation.CDroppable
 import annotation.CObject
 import annotation.CProperty
+import effect.audio.AudioEffect
 import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.control.Alert
@@ -18,6 +19,7 @@ import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
 import org.bytedeco.javacv.FrameGrabber
 import properties.CAnimatableDoubleProperty
+import properties.CButtonProperty
 import properties.CFileProperty
 import properties.CIntegerProperty
 import ui.Main
@@ -46,6 +48,10 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
 
     @CProperty("開始位置", 2)
     val startPos = CIntegerProperty(min = 0)
+
+    @CProperty("音声エフェクトの適用",3)
+    val buttonProperty = CButtonProperty("適用")
+
 
     private var grabber: FFmpegFrameGrabber? = null
     private var isGrabberStarted = false
@@ -80,6 +86,14 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         file.valueProperty.addListener { _, _, n -> onFileLoad(n.toString()) }
         displayName = "[音声]"
         uiObject?.widthProperty()?.addListener { _, _, n -> clipRect.width = n.toDouble() }
+
+        buttonProperty.onAction = {
+            Alert(Alert.AlertType.INFORMATION,"メッセージ",ButtonType.OK).show()
+            effects.forEachIndexed { index, effect ->
+                if (effect is AudioEffect)
+                    effect.executeFilter(0, audioLength)
+            }
+        }
     }
 
     override fun onFileDropped(f: String) {

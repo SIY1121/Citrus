@@ -49,8 +49,8 @@
     <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.2.50" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.gluegen:gluegen-rt:natives-linux-armv6:2.3.2" level="project" />
     <orderEntry type="library" name="Gradle: pl.edu.icm:JLargeArrays:1.5" level="project" />
-    <orderEntry type="library" name="Gradle: org.apache.commons:commons-math3:3.5" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.gluegen:gluegen-rt:natives-linux-armv6hf:2.3.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.commons:commons-math3:3.5" level="project" />
     <orderEntry type="library" name="Gradle: org.bytedeco:javacv:1.4.1" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.gluegen:gluegen-rt:natives-linux-i586:2.3.2" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jogamp.gluegen:gluegen-rt:natives-macosx-universal:2.3.2" level="project" />
