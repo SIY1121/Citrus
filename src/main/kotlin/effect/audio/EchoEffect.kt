@@ -29,7 +29,9 @@ class EchoEffect(file: String) : AudioEffect(file) {
         val arr = provider.getSamples((end - start) / Main.project.fps * Main.project.sampleRate)
         val res = arr?.mapIndexed { index, value -> if (index % 2 == 0) 0f else value }?.toFloatArray()
 
-        val recorder = FFmpegFrameRecorder("$file.tmp", provider.grabber.audioChannels)
+        val recorder = FFmpegFrameRecorder("$file.ctmp", provider.grabber.audioChannels)
+        recorder.sampleRate = Main.project.sampleRate
+        recorder.format = "flac"
         recorder.audioCodecName = "flac"
         recorder.start()
 

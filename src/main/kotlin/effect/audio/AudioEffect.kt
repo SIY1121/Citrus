@@ -1,12 +1,13 @@
 package effect.audio
 
+import effect.Effect
 import objects.AudioSampleProvider
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.FrameGrabber
 import ui.Main
 import java.nio.FloatBuffer
 
-abstract class AudioEffect(val file: String) {
+abstract class AudioEffect(val file: String) : Effect(){
     /**
      * フィルターを実行し、テンポラリファイルに保存する
      * @param start フィルターの開始位置

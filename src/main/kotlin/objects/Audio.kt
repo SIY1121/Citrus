@@ -14,7 +14,6 @@ import javafx.scene.shape.Rectangle
 import javafx.stage.FileChooser
 import javafx.stage.Stage
 import kotlinx.coroutines.experimental.launch
-import mod.FFmpegFrameGrabberMod
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
 import org.bytedeco.javacv.FrameGrabber
@@ -23,14 +22,11 @@ import properties.CButtonProperty
 import properties.CFileProperty
 import properties.CIntegerProperty
 import ui.Main
-import ui.WindowFactory
 import ui.TimeLineObject
 import ui.TimelineController
+import ui.WindowFactory
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.nio.FloatBuffer
-import java.nio.ShortBuffer
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
@@ -49,7 +45,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     @CProperty("開始位置", 2)
     val startPos = CIntegerProperty(min = 0)
 
-    @CProperty("音声エフェクトの適用",3)
+    @CProperty("音声エフェクトの適用", 3)
     val buttonProperty = CButtonProperty("適用")
 
 
@@ -71,6 +67,8 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
      */
     private var waveFormCanvas = Canvas()
 
+    private var canvasSetuped = false
+
     private var waveLevelData = ByteArray(0)
 
     /**
@@ -88,11 +86,12 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         uiObject?.widthProperty()?.addListener { _, _, n -> clipRect.width = n.toDouble() }
 
         buttonProperty.onAction = {
-            Alert(Alert.AlertType.INFORMATION,"メッセージ",ButtonType.OK).show()
+            Alert(Alert.AlertType.INFORMATION, "メッセージ", ButtonType.OK).show()
             effects.forEachIndexed { index, effect ->
                 if (effect is AudioEffect)
                     effect.executeFilter(0, audioLength)
             }
+            onFileLoad("${file.value}.ctmp")
         }
     }
 
@@ -121,7 +120,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
 
             samplesPerFrame = (grabber?.sampleRate ?: Main.project.sampleRate) * (grabber?.audioChannels
                     ?: 2) / Main.project.fps
-
+            //TODO flacの長さが検知できない問題を解決する
             audioLength = ((grabber?.lengthInFrames ?: 1) * (Main.project.fps / (grabber?.frameRate
                     ?: 30.0))).toInt()
 
@@ -267,6 +266,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     }
 
     private fun setupWaveformCanvas() {
+        if (canvasSetuped) return
         Platform.runLater {
 
             waveFormCanvas.height = 30.0
@@ -292,6 +292,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
 
             uiObject?.headerPane?.children?.add(0, waveFormCanvas)
             renderWaveform()
+            canvasSetuped = true
         }
     }
 
