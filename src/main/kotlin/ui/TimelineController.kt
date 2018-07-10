@@ -317,7 +317,7 @@ class TimelineController : Initializable {
 
         val cObject = newObj ?: clazz.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(layerIndex, selectedScene) as CitrusObject
 
-        cObject.setupProperties()
+        cObject.setup()
         val o = TimeLineObject(cObject, this)
         o.prefHeight = layerHeight * 2
         o.style = "-fx-background-color:#${o.color.darker().toString().substring(2)};"

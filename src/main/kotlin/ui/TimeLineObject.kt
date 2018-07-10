@@ -81,7 +81,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
     /**
      * セクションのリスト
      */
-    val properties: MutableList<PropertySection> = ArrayList()
+    val propertySections: MutableList<PropertySection> = ArrayList()
 
     private var currentFrame = 0
 
@@ -161,7 +161,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         infoPane.children.add(label)
         infoPane.maxWidthProperty().bind(widthProperty())
 
-        widthProperty().addListener({ _, _, n ->
+        widthProperty().addListener { _, _, n ->
             if (n.toDouble() < 50) {
                 imageView.isVisible = false
                 label.isVisible = false
@@ -169,7 +169,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                 imageView.isVisible = true
                 label.isVisible = true
             }
-        })
+        }
 
         headerPane.children.add(infoPane)
         headerPane.minHeight = 30.0
@@ -182,144 +182,12 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         editWindowRoot.effect = DropShadow()
         editWindowRoot.padding = Insets(10.0)
 
+        editWindowRoot.children.add(cObject.editRootPane)
+        children.add(cObject.keyframeRootPane)
 
-        //cObjectの親クラスをたどり、それぞれのプロパティを取得
-        cObject.javaClass.kotlin.allSuperclasses.reversed().filter { !it.java.isInterface }.forEach { clazz ->
-            //これらのクラスは除外
-            if (clazz != Any::class && clazz != CitrusObject::class) {
-                val section = PropertySection(
-                        if (clazz.annotations.any { it is CObject })
-                            (clazz.annotations.first { it is CObject } as CObject).name
-                        else
-                            "無題"
-                )
-                //CPropertyアノテーションを持ったプロパティのみ登録
-                clazz.memberProperties.filter { it.annotations.any { it is CProperty } }
-                        .forEach { p ->
-                            section.property.add(PropertyData(cObject.javaClass.kotlin.memberProperties.first { p.name == it.name }, null, null))
-                        }
-                properties.add(section)
-            }
-        }
-
-        //cObject本体のプロパティを登録
-        val section = PropertySection(
-                if (cObject.javaClass.annotations.any { it is CObject })
-                    (cObject.javaClass.kotlin.annotations.first { it is CObject } as CObject).name
-                else
-                    "無題")
-        cObject.javaClass.kotlin.declaredMemberProperties.filter { it.annotations.any { it is CProperty } }
-                .forEach {
-                    section.property.add(PropertyData(it, null, null))
-                }
-        properties.add(section)
-
-        //取得したプロパティからUIを生成
-        for (p in properties) {
-            //詳細画面
-            val grid = GridPane()
-            val accordion = TitledPane(p.group, grid)
-            grid.columnConstraints.addAll(ColumnConstraints(), ColumnConstraints())
-            grid.prefWidthProperty().bind(accordion.widthProperty())
-            grid.hgap = 10.0
-            grid.vgap = 10.0
-            accordion.isAnimated = false
-
-            //キーフレーム画面
-            val keyVBox = VBox()
-            val keyAccordion = TitledPane(p.group, keyVBox)
-            keyAccordion.minWidth = 0.0
-            keyVBox.padding = Insets(0.0)
-            children.add(keyAccordion)
-
-            //CPropertyアノテーションのindexに基づいてソート
-            p.property.sortBy { (it.kProprety.annotations.first { it is CProperty } as CProperty).index }
-
-            var animatablePropertyIndex = 0
-            for ((i, pp) in p.property.withIndex()) {
-                val name = (pp.kProprety.annotations.first { it is CProperty } as CProperty).displayName
-                val v = pp.kProprety.get(cObject)
-
-                if (v is CitrusProperty<*>) {
-                    //詳細画面
-                    pp.property = v
-                    grid.add(Label(name), 0, i)
-                    grid.add(v.uiNode, 1, i)
-
-                    //キーフレーム画面
-                    if (v is CitrusAnimatableProperty<*>) {
-                        val wrapperPane = Pane()
-                        val label = Label(name)
-                        widthProperty().addListener { _, _, n ->
-                            v.editPane.prefWidth = n.toDouble()
-                            wrapperPane.prefWidth = n.toDouble()
-                        }
-                        wrapperPane.setOnMouseClicked {
-                            timelineController.layerScrollPane.requestFocus()
-                            it.consume()
-                        }
-                        timelineController.layerScrollPane.hvalueProperty().addListener { _, _, _ ->
-                            label.layoutX = Math.max(timelineController.offsetX - layoutX, 0.0)
-                        }
-                        wrapperPane.minHeight = v.editPane.minHeight
-                        wrapperPane.background = Background(BackgroundFill(
-                                if (animatablePropertyIndex % 2 == 0) this.color.darker().darker()
-                                else this.color.darker()
-                                , CornerRadii(0.0), Insets(0.0)))
-
-                        wrapperPane.children.add(label)
-                        wrapperPane.children.add(v.editPane)
-
-
-                        keyVBox.children.add(wrapperPane)
-                        animatablePropertyIndex++
-                    }
-
-                }
-
-            }
-            grid.columnConstraints[1].hgrow = Priority.ALWAYS
-            editWindowRoot.children.add(accordion)
-        }
-
-        val menu = ContextMenu()
-        if (cObject is DrawableObject)
-            EffectManager.graphicsEffects.forEach { t, u ->
-                val item = MenuItem((u.annotations.first { it is CEffect } as CEffect).name)
-                item.setOnAction { }
-                menu.items.add(item)
-            }
-        else if (cObject is Audio)
-            EffectManager.audioEffects.forEach { t, u ->
-                val item = MenuItem((u.annotations.first { it is CEffect } as CEffect).name)
-                item.setOnAction {
-                    val grid = GridPane()
-                    val accordion = TitledPane(item.text, grid)
-                    grid.columnConstraints.addAll(ColumnConstraints(), ColumnConstraints())
-                    grid.prefWidthProperty().bind(accordion.widthProperty())
-                    grid.hgap = 10.0
-                    grid.vgap = 10.0
-                    accordion.isAnimated = false
-
-                    //grid.add(Label(name), 0, i)
-                    //grid.add(v.uiNode, 1, i)
-                    cObject.effects.add(u.newInstance() as Effect)
-                    editWindowRoot.children.add(accordion)
-                }
-                menu.items.add(item)
-            }
-
-        editWindowRoot.children.add(Button("+").apply {
-            setOnMouseClicked {
-                println("clicked")
-                menu.show(this, it.screenX, it.screenY)
-            }
-        })
-
-        cObject.propertyChangedListener = object : CitrusObject.PropertyChangedListener {
+        cObject.propertyChangedListener = object : CitrusObject.PropertyChangedListener{
             override fun onPropertyChanged() {
-                if (!timelineController.playing && !timelineController.projectRenderer.encoding)
-                    timelineController.projectRenderer.renderPreview(timelineController.currentFrame)
+                timelineController.projectRenderer.renderPreview(timelineController.currentFrame)
             }
         }
 
@@ -364,7 +232,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         val divideLabel = Label("分割")
         divideLabel.setOnMouseClicked {
             val newObj = cObject.clone(timelineController.currentFrame, cObject.end)
-            newObj.setupProperties()
+            newObj.setup()
             timelineController.addObject(cObject.javaClass, cObject.layer, null, timelineController.currentFrame, cObject.end, newObj)
             cObject.end = timelineController.currentFrame
             onScaleChanged()
@@ -409,7 +277,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
     fun onCaretChanged(frame: Int) {
         currentFrame = frame - cObject.start
-        for (ps in properties)
+        for (ps in propertySections)
             for (p in ps.property) {
 //                val pro = p.property
 //                when (pro) {
@@ -432,14 +300,14 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         layoutX = cObject.start * TimelineController.pixelPerFrame
         prefWidth = cObject.end * TimelineController.pixelPerFrame - layoutX
 
-        properties.forEach { section ->
+        propertySections.forEach { section ->
             section.property.forEach {
                 val p = it.property
                 (p as? CitrusAnimatableProperty<*>)?.onTimelineScaleChanged()
             }
         }
 
-//        for (ps in properties)
+//        for (ps in propertySections)
 //            for (p in ps.property) {
 //                val pro = p.property
 //                val pane = p.pane

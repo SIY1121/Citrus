@@ -12,7 +12,6 @@ import properties.KeyFrame
 import ui.Main
 import ui.TimelineController
 import java.io.*
-import kotlin.reflect.full.starProjectedType
 
 class Project {
     var initialized = false
@@ -27,7 +26,7 @@ class Project {
     init {
         scene.add(Scene())
     }
-
+    //TODO Interportationの保存と復元
     fun save() {
         val json = JSONObject()
         json.put("width", width)
@@ -54,8 +53,8 @@ class Project {
                     objJson.put("scene", obj.scene)
 
                     //オブジェクトのすべてのプロパティに対して
-                    obj.memberProperties.forEach {
-                        val p = it.get(obj) as CitrusProperty<*>
+                    obj.metadata.allProperties.forEach {
+                        val p = it.property
 
                         //アニメーションプロパティの場合
                         if (p is CitrusAnimatableProperty<*>) {
@@ -128,7 +127,7 @@ class Project {
                     val clazz = Class.forName(obj["@class"].toString())
                     //コンストラクタの取得
                     val cObject = clazz.getDeclaredConstructor(Int::class.java, Int::class.java).newInstance(-1, -1) as CitrusObject
-                    cObject.setupProperties()
+                    cObject.setup()
 
                     //基本設定
                     //この時点で自動的にscene配列に格納される
@@ -138,9 +137,9 @@ class Project {
                     cObject.scene = obj["scene"] as Int
 
                     //メンバープロパティについて
-                    cObject.memberProperties.forEach { m ->
+                    cObject.metadata.allProperties.forEach { m ->
                         //プロパティの取得
-                        val p = m.get(cObject) as? CitrusProperty<Any> ?: return
+                        val p = m.property
                         val valueType = p.value::class.javaObjectType
 
                         //アニメーションプロパティでかつキーフレームを持っている場合
