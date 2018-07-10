@@ -303,7 +303,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
 
                     //grid.add(Label(name), 0, i)
                     //grid.add(v.uiNode, 1, i)
-                    cObject.effects.add(u.getDeclaredConstructor(String::class.java).newInstance((cObject as Audio).file.value) as Effect)
+                    cObject.effects.add(u.newInstance() as Effect)
                     editWindowRoot.children.add(accordion)
                 }
                 menu.items.add(item)

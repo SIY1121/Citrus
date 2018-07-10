@@ -7,17 +7,18 @@ import org.bytedeco.javacv.FrameGrabber
 import ui.Main
 import java.nio.FloatBuffer
 
-abstract class AudioEffect(val file: String) : Effect(){
+abstract class AudioEffect() : Effect() {
     /**
      * フィルターを実行し、テンポラリファイルに保存する
+     * @oaram file フィルターを掛けるソース
      * @param start フィルターの開始位置
      * @param end フィルターの終了位置
      */
-    abstract fun executeFilter(start: Int, end: Int)
+    abstract fun executeFilter(file: String, start: Int, end: Int): Boolean
 
-    val provider = SimpleAudioSampleProvider(file)
 
     class SimpleAudioSampleProvider(file: String) {
+
         val grabber = FFmpegFrameGrabber(file)
 
         init {

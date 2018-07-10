@@ -39,6 +39,8 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     @CProperty("ファイル", 0)
     val file = CFileProperty(listOf(FileChooser.ExtensionFilter("音声ファイル", (this.javaClass.annotations.first { it is CDroppable } as CDroppable).filter.map { "*.$it" })))
 
+    var originalFile = ""
+
     @CProperty("音量", 1)
     val volume = CAnimatableDoubleProperty(0.0, 2.0, 1.0, 0.01)
 
@@ -86,12 +88,20 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
         uiObject?.widthProperty()?.addListener { _, _, n -> clipRect.width = n.toDouble() }
 
         buttonProperty.onAction = {
-            Alert(Alert.AlertType.INFORMATION, "メッセージ", ButtonType.OK).show()
-            effects.forEachIndexed { index, effect ->
-                if (effect is AudioEffect)
-                    effect.executeFilter(0, audioLength)
+            val f = File(originalFile)
+            val dialog = WindowFactory.buildOnProgressDialog("処理中", "フィルタリングを実行中...")
+            dialog.show()
+            launch {
+                effects.forEachIndexed { index, effect ->
+                    if (effect is AudioEffect)
+                        effect.executeFilter(if (index == 0) originalFile else "${f.parent}/.${f.name}.wav", 0, audioLength)
+                }
+                Platform.runLater {
+                    onFileLoad("${f.parent}/.${f.name}.wav")
+                    dialog.close()
+                    Alert(Alert.AlertType.INFORMATION, "フィルタリングが完了しました", ButtonType.OK).show()
+                }
             }
-            onFileLoad("${file.value}.ctmp")
         }
     }
 
@@ -100,6 +110,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     }
 
     private fun onFileLoad(file: String) {
+        originalFile = file
         val dialog = WindowFactory.buildOnProgressDialog("処理中", "音声を読み込み中...")
         dialog.show()
         launch {
@@ -121,8 +132,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             samplesPerFrame = (grabber?.sampleRate ?: Main.project.sampleRate) * (grabber?.audioChannels
                     ?: 2) / Main.project.fps
             //TODO flacの長さが検知できない問題を解決する
-            audioLength = ((grabber?.lengthInFrames ?: 1) * (Main.project.fps / (grabber?.frameRate
-                    ?: 30.0))).toInt()
+            audioLength = ((grabber?.lengthInTime ?: 0L) / 1000_000.0 * Main.project.fps).toInt()
 
             startPos.max = audioLength
             end = start + audioLength
@@ -214,7 +224,7 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
 
         val progressBar = dialog.scene.lookup("#progressBar") as ProgressBar
 
-        waveLevelData = ByteArray(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution).toInt())
+        waveLevelData = ByteArray(((grabber?.lengthInTime ?: 0) / 1000.0 / 1000.0 / resolution).toInt() + 1)
 
 
         var buffer = grabber?.grabSamples()
