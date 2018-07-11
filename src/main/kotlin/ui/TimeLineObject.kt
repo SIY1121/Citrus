@@ -190,6 +190,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
                 else
                     EffectManager.audioEffects
 
+        //エフェクトの追加、削除を監視する
         cObject.effects.addListener { c: ListChangeListener.Change<out Effect> ->
             c.next()
             when {
@@ -206,7 +207,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             }
         }
 
-
+        //エフェクトリストを作成
         effects.forEach { t, u ->
             effectMenu.items.add(MenuItem(t).apply {
                 setOnAction {
@@ -217,6 +218,7 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
             })
         }
 
+        //メニュー表示
         addEffectButton.setOnMouseClicked {
             effectMenu.show(addEffectButton, it.screenX, it.screenY)
         }
