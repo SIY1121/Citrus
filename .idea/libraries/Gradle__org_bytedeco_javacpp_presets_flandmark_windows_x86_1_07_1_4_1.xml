@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.bytedeco.javacpp-presets:flandmark:windows-x86:1.07-1.4.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.bytedeco.javacpp-presets/flandmark/1.07-1.4.1/974ea85bda5eecd6c2ea178e9a27dc57a092f782/flandmark-1.07-1.4.1-windows-x86.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.bytedeco.javacpp-presets/flandmark/1.07-1.4.1/9721400f9985b15f861c801b951bb1c357e00f16/flandmark-1.07-1.4.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
