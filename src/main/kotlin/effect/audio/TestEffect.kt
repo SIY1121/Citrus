@@ -2,6 +2,7 @@ package effect.audio
 
 import annotation.CEffect
 import annotation.CProperty
+import objects.CitrusObject
 import org.apache.commons.lang3.SystemUtils
 import org.apache.commons.math3.complex.Complex
 import org.bytedeco.javacpp.avcodec
@@ -16,7 +17,7 @@ import java.nio.file.Files
 import java.nio.file.LinkOption
 
 @CEffect("テストエフェクト")
-class TestEffect : AudioEffect() {
+class TestEffect(parent : CitrusObject) : AudioEffect(parent) {
 
     @CProperty("ディレイ", 0)
     val delay = CDoubleProperty(0.1)

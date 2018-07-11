@@ -3,6 +3,8 @@ package objects
 import annotation.CObject
 import annotation.CProperty
 import effect.Effect
+import javafx.collections.FXCollections
+import javafx.collections.ObservableList
 import javafx.geometry.HPos
 import javafx.geometry.Insets
 import javafx.scene.control.Label
@@ -16,7 +18,6 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.memberProperties
 
 /**
  * タイムラインに並ぶオブジェクトのスーパークラス
@@ -34,7 +35,7 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
             displayNameChangeListener?.onDisplayNameChanged(value)
         }
 
-    val effects: MutableList<Effect> = ArrayList()
+    val effects: ObservableList<Effect> = FXCollections.observableArrayList()
 
     val linkedObjects: MutableList<CitrusObject> = ArrayList()
 
@@ -157,7 +158,10 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
      */
     private fun setupProperties() {
         metadata = Metadata(this)
+        //アニメーション可能プロパティは別枠で取っておく
         metadata.allProperties.filter { it.property is CitrusAnimatableProperty<*> }.forEach { animatableProperties.add(it.property as CitrusAnimatableProperty<Any>) }
+        //値が変化したときに画面を再描画するリスナを設定
+        metadata.allProperties.forEach { it.property.valueProperty.addListener { _, _, _ -> propertyChangedListener?.onPropertyChanged() } }
     }
 
     /**
@@ -167,10 +171,18 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
 
         //セクションごとについて
         metadata.propertiesSections.forEach {
-            val partsGrid = GridPane()//調整UIが張り付くペイン
+
+            val partsGrid = GridPane().apply {
+                //調整UIが張り付くペイン
+
+                columnConstraints.addAll(ColumnConstraints(),
+                        ColumnConstraints(150.0, 150.0, Double.POSITIVE_INFINITY, Priority.ALWAYS, HPos.LEFT, true))
+                hgap = 5.0
+                vgap = 5.0
+
+            }
             val titledPane = TitledPane(it.sectionName, partsGrid)//タイトル付きペイン
-            partsGrid.columnConstraints.addAll(ColumnConstraints(),
-                    ColumnConstraints(150.0, 150.0, Double.POSITIVE_INFINITY, Priority.ALWAYS, HPos.CENTER, true))
+
 
             val keyframeVBox = VBox()//キーフレームのUIを縦に並べるペイン
             keyframeVBox.padding = Insets(0.0)
@@ -287,6 +299,8 @@ abstract class CitrusObject(defLayer: Int, defScene: Int) {
                         .forEach {
                             properties.add(PropertyData(it as KProperty1<CitrusObject, *>, cObject))
                         }
+                //ソート
+                properties.sortBy { (it.kProperty.annotations.first { it is CProperty } as CProperty).index }
             }
         }
 
