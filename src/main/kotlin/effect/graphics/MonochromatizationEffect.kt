@@ -1,14 +1,13 @@
 package effect.graphics
 
 import annotation.CEffect
-import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
+import objects.CitrusObject
 import objects.DrawableObject
-import project.ProjectRenderer
 import java.nio.FloatBuffer
 
 @CEffect("単色化")
-class MonochromatizationEffect(drawable: DrawableObject, gl: GL2) : GLSLEffect(drawable, gl) {
+class MonochromatizationEffect(drawable: DrawableObject, gl: GL2, parent: CitrusObject) : GLSLEffect(drawable, gl, parent) {
 
 
     init {

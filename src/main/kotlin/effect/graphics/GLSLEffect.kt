@@ -3,10 +3,11 @@ package effect.graphics
 import com.jogamp.opengl.GL
 import com.jogamp.opengl.GL2
 import effect.Effect
+import objects.CitrusObject
 import objects.DrawableObject
 import util.*
 
-abstract class GLSLEffect(val drawable: DrawableObject, val gl: GL2) : Effect() , DrawableEffect{
+abstract class GLSLEffect(val drawable: DrawableObject, val gl: GL2,parent : CitrusObject) : Effect(parent) , DrawableEffect{
     val frameBufferID: Int
     val textureBufferID: Int
     var program: Int = 0

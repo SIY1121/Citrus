@@ -13,6 +13,7 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
 import javafx.stage.FileChooser
 import javafx.stage.Stage
+import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
@@ -91,13 +92,13 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
             val f = File(originalFile)
             val dialog = WindowFactory.buildOnProgressDialog("処理中", "フィルタリングを実行中...")
             dialog.show()
-            launch {
+            grabber?.stop()
+            launch(CommonPool) {
                 effects.forEachIndexed { index, effect ->
-                    if (effect is AudioEffect)
-                        effect.executeFilter(if (index == 0) originalFile else "${f.parent}/.${f.name}.wav", 0, audioLength)
+                    (effect as? AudioEffect)?.executeFilter(if (index == 0) originalFile else "${f.parent}/.${f.name}.wav", 0, audioLength)
                 }
                 Platform.runLater {
-                    onFileLoad("${f.parent}/.${f.name}.wav")
+                    onFileLoad(if (effects.size > 0) "${f.parent}/.${f.name}.wav" else originalFile)
                     dialog.close()
                     Alert(Alert.AlertType.INFORMATION, "フィルタリングが完了しました", ButtonType.OK).show()
                 }
@@ -110,7 +111,10 @@ class Audio(defLayer: Int, defScene: Int) : CitrusObject(defLayer, defScene), Au
     }
 
     private fun onFileLoad(file: String) {
-        originalFile = file
+        //一時ファイルでなければオリジナルファイルとして保管
+        if (!File(file).name.startsWith("."))
+            originalFile = file
+
         val dialog = WindowFactory.buildOnProgressDialog("処理中", "音声を読み込み中...")
         dialog.show()
         launch {

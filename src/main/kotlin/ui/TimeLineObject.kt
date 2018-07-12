@@ -1,26 +1,25 @@
 package ui
 
-import annotation.CEffect
 import annotation.CObject
+import effect.Effect
+import effect.EffectManager
+import javafx.collections.ListChangeListener
 import javafx.event.EventHandler
 import javafx.geometry.Insets
 import javafx.scene.Cursor
 import javafx.scene.control.*
 import javafx.scene.effect.DropShadow
-import javafx.scene.input.MouseButton
-import javafx.scene.input.MouseEvent
-import annotation.CProperty
-import effect.Effect
-import effect.EffectManager
-import kotlin.reflect.KProperty1
-import kotlin.reflect.full.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
+import javafx.scene.input.MouseButton
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
-import objects.*
+import objects.CitrusObject
+import objects.DrawableObject
 import properties.CitrusAnimatableProperty
 import properties.CitrusProperty
+import kotlin.reflect.KProperty1
 
 
 class TimeLineObject(var cObject: CitrusObject, val timelineController: TimelineController) : VBox(),
@@ -182,14 +181,60 @@ class TimeLineObject(var cObject: CitrusObject, val timelineController: Timeline
         editWindowRoot.effect = DropShadow()
         editWindowRoot.padding = Insets(10.0)
 
+        val addEffectButton = Button("+")
+        val effectMenu = ContextMenu()
+
+        val effects =
+                if (cObject is DrawableObject)
+                    EffectManager.graphicsEffects
+                else
+                    EffectManager.audioEffects
+
+        //エフェクトの追加、削除を監視する
+        cObject.effects.addListener { c: ListChangeListener.Change<out Effect> ->
+            c.next()
+            when {
+                c.wasAdded() -> {
+                    c.addedSubList.forEach {
+                        editWindowRoot.children.add(it.editPane)
+                    }
+                }
+                c.wasRemoved() -> {
+                    c.removed.forEach {
+                        editWindowRoot.children.remove(it.editPane)
+                    }
+                }
+            }
+        }
+
+        //エフェクトリストを作成
+        effects.forEach { t, u ->
+            effectMenu.items.add(MenuItem(t).apply {
+                setOnAction {
+                    val addingEffect = u.getDeclaredConstructor(CitrusObject::class.java).newInstance(cObject) as Effect
+                    addingEffect.setup()
+                    cObject.effects.add(addingEffect)
+                }
+            })
+        }
+
+        //メニュー表示
+        addEffectButton.setOnMouseClicked {
+            effectMenu.show(addEffectButton, it.screenX, it.screenY)
+        }
+
+        editWindowRoot.children.add(addEffectButton)
+
         editWindowRoot.children.add(cObject.editRootPane)
         children.add(cObject.keyframeRootPane)
 
-        cObject.propertyChangedListener = object : CitrusObject.PropertyChangedListener{
-            override fun onPropertyChanged() {
-                timelineController.projectRenderer.renderPreview(timelineController.currentFrame)
-            }
-        }
+        cObject.propertyChangedListener =
+                object : CitrusObject.PropertyChangedListener {
+                    override fun onPropertyChanged() {
+                        if (!timelineController.playing)
+                            timelineController.projectRenderer.renderPreview(timelineController.currentFrame)
+                    }
+                }
 
         setupMenu()
     }

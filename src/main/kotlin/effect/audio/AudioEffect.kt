@@ -2,12 +2,13 @@ package effect.audio
 
 import effect.Effect
 import objects.AudioSampleProvider
+import objects.CitrusObject
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.FrameGrabber
 import ui.Main
 import java.nio.FloatBuffer
 
-abstract class AudioEffect() : Effect() {
+abstract class AudioEffect(parent : CitrusObject) : Effect(parent) {
     /**
      * フィルターを実行し、テンポラリファイルに保存する
      * @oaram file フィルターを掛けるソース

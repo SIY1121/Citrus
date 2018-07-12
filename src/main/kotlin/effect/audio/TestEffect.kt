@@ -2,13 +2,11 @@ package effect.audio
 
 import annotation.CEffect
 import annotation.CProperty
+import objects.CitrusObject
 import org.apache.commons.lang3.SystemUtils
 import org.apache.commons.math3.complex.Complex
-import org.bytedeco.javacpp.avcodec
-import org.bytedeco.javacpp.avformat
 import org.bytedeco.javacv.FFmpegFrameRecorder
 import properties.CDoubleProperty
-import sun.plugin2.util.SystemUtil
 import ui.Main
 import java.io.File
 import java.nio.FloatBuffer
@@ -16,7 +14,7 @@ import java.nio.file.Files
 import java.nio.file.LinkOption
 
 @CEffect("テストエフェクト")
-class TestEffect : AudioEffect() {
+class TestEffect(parent: CitrusObject) : AudioEffect(parent) {
 
     @CProperty("ディレイ", 0)
     val delay = CDoubleProperty(0.1)
@@ -37,8 +35,8 @@ class TestEffect : AudioEffect() {
         val res = arr?.mapIndexed { index, value -> if (index % 2 == 0) 0f else value }?.toFloatArray()
 
         val f = File(file)
-
-        val recorder = FFmpegFrameRecorder("${f.parent}/.${f.name}.wav", provider.grabber.audioChannels)
+        File("${f.parent}/.${f.name}.wav").delete()
+        val recorder = FFmpegFrameRecorder(File("${f.parent}/.${f.name}.wav"), provider.grabber.audioChannels)
         recorder.sampleRate = Main.project.sampleRate
         //recorder.format = "tak"
         //recorder.audioCodec = avcodec.WAVE
@@ -48,7 +46,7 @@ class TestEffect : AudioEffect() {
 
         recorder.stop()
 
-        if(SystemUtils.IS_OS_WINDOWS)
+        if (SystemUtils.IS_OS_WINDOWS)
             Files.setAttribute(File("${f.parent}/.${f.name}.wav").toPath(), "dos:hidden", true, LinkOption.NOFOLLOW_LINKS)
 
         return true
