@@ -8,7 +8,7 @@ import javafx.stage.FileChooser
 /**
  * ファイルを選択、パスを管理するプロパティ
  */
-class CFileProperty(val filters: List<FileChooser.ExtensionFilter>) : CitrusProperty<String> {
+class CFileProperty(val filters: List<FileChooser.ExtensionFilter>? = null) : CitrusProperty<String> {
     private val property = SimpleStringProperty()
     override val valueProperty: Property<String>
         get() = property
@@ -17,11 +17,12 @@ class CFileProperty(val filters: List<FileChooser.ExtensionFilter>) : CitrusProp
     override val uiNode: Button
         get() = button
 
-    init{
+    init {
         button.setOnAction {
             val chooser = FileChooser()
             chooser.title = "ファイルを選択"
-            chooser.extensionFilters.addAll(filters)
+            if (filters != null)
+                chooser.extensionFilters.addAll(filters)
             value = chooser.showOpenDialog(button.scene.window).path
         }
 
