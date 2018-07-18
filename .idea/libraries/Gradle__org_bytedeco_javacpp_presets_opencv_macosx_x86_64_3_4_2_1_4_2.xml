@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.bytedeco.javacpp-presets:opencv:macosx-x86_64:3.4.2-1.4.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.bytedeco.javacpp-presets/opencv/3.4.2-1.4.2/ec76f1e8d17ab78bc45c382f79fd1069577c6221/opencv-3.4.2-1.4.2-macosx-x86_64.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.bytedeco.javacpp-presets/opencv/3.4.2-1.4.2/721b935aa0eb8955d35704d13bdd01bea9e13df1/opencv-3.4.2-1.4.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

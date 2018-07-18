@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.bytedeco.javacpp-presets:flandmark:android-arm:1.07-1.4.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.bytedeco.javacpp-presets/flandmark/1.07-1.4.2/1bdda49b549e649639496c0b7d5178598dd509b8/flandmark-1.07-1.4.2-android-arm.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.bytedeco.javacpp-presets/flandmark/1.07-1.4.2/bce784959e579413d087ea5157f31c820de11b5e/flandmark-1.07-1.4.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

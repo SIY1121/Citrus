@@ -28,6 +28,8 @@ import org.opencv.core.Mat
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 import project.ProjectRenderer
+import properties.CAnimatableDoubleProperty
+import properties.CDoubleProperty
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import properties.CFileProperty
@@ -50,7 +52,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
     @CProperty("開始位置", 1)
     val startPos = CIntegerProperty(min = 0)
 
-    var grabber: FFmpegFrameGrabber? = null
+    var grabber: FFmpegFrameGrabberMod? = null
     var isGrabberStarted = false
 
     var oldFrame = -100
@@ -83,7 +85,7 @@ class Video(defLayer: Int, defScene: Int) : DrawableObject(defLayer, defScene) {
         dialog.show()
         launch {
             //デコーダ準備
-            grabber = FFmpegFrameGrabber(file)
+            grabber = FFmpegFrameGrabberMod(file)
             grabber?.setVideoOption("threads", "0")
             grabber?.start()
             if (grabber?.videoCodec == 0) {
